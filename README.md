@@ -1,2 +1,3 @@
 # NJ-Real-Estate-Analyst
 NJ Real Estate Analyst is an application that analyzes residential property listings in New Jersey to help users understand whether a house is fairly priced or overpriced.
+The system compares a selected property with similar homes in the same area and estimates a fair market value based on key characteristics such as size, location, property type, and other listing details. It also analyzes signals like how long the property has been on the market and other market indicators to estimate the likelihood that the listing price may drop in the near future. The goal of this project is to apply data analysis and machine learning techniques to support better decision-making for home buyers, sellers, and investors.
