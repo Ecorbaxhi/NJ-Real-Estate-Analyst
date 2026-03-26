@@ -93,9 +93,12 @@ def find_comparables(df, house):
 data_path = Path(__file__).resolve().parent.parent / "data" / "kc_house_data.csv"
 df = pd.read_csv(data_path)
 
+# Let's store the valid zipcodes present in the dataset
+valid_zipcodes = set(df["zipcode"].unique())
 
-# Let's select only the features the app will use
-features_for_app = [
+
+# Let's define features WITH zipcode (location-aware model)
+features_with_zip = [
     "bedrooms",
     "bathrooms",
     "sqft_living",
@@ -104,24 +107,45 @@ features_for_app = [
     "zipcode"
 ]
 
-X_app = df[features_for_app]
-y_app = df["price"]
+# Let's define features WITHOUT zipcode (general model)
+features_no_zip = [
+    "bedrooms",
+    "bathrooms",
+    "sqft_living",
+    "floors",
+    "yr_built"
+]
+
+# Let's prepare datasets for both models
+X_with_zip = df[features_with_zip]
+X_no_zip = df[features_no_zip]
+y = df["price"]
 
 
-# Let's split the dataset into training and testing
-X_train_app, X_test_app, y_train_app, y_test_app = train_test_split(
-    X_app, y_app, test_size=0.2, random_state=42
+# Let's split data for both models
+X_train_zip, X_test_zip, y_train_zip, y_test_zip = train_test_split(
+    X_with_zip, y, test_size=0.2, random_state=42
+)
+
+X_train_no_zip, X_test_no_zip, y_train_no_zip, y_test_no_zip = train_test_split(
+    X_no_zip, y, test_size=0.2, random_state=42
 )
 
 
-# Let's train the Linear Regression model
-model_app = LinearRegression()
-model_app.fit(X_train_app, y_train_app)
+# Let's train models WITH zipcode
+model_zip = LinearRegression()
+model_zip.fit(X_train_zip, y_train_zip)
+
+rf_model_zip = RandomForestRegressor(n_estimators=100, random_state=42)
+rf_model_zip.fit(X_train_zip, y_train_zip)
 
 
-# Let's train the Random Forest model for better performance
-rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-rf_model.fit(X_train_app, y_train_app)
+# Let's train models WITHOUT zipcode
+model_no_zip = LinearRegression()
+model_no_zip.fit(X_train_no_zip, y_train_no_zip)
+
+rf_model_no_zip = RandomForestRegressor(n_estimators=100, random_state=42)
+rf_model_no_zip.fit(X_train_no_zip, y_train_no_zip)
 
 
 # Let's create a simple route to check if the API is running
@@ -134,25 +158,52 @@ def home():
 @app.post("/predict")
 def predict_house(data: HouseInput):
 
-    # Let's convert user input into a dataframe
-    house_example = pd.DataFrame({
-        "bedrooms": [data.bedrooms],
-        "bathrooms": [data.bathrooms],
-        "sqft_living": [data.sqft_living],
-        "floors": [data.floors],
-        "yr_built": [data.yr_built],
-        "zipcode": [data.zipcode]
-    })
+    # Let's choose the right model depending on whether the zipcode is known
+    if data.zipcode in valid_zipcodes:
 
-    # Let's predict price using both models
-    lr_price = estimate_price(model_app, house_example)
-    rf_price = estimate_price(rf_model, house_example)
+        # Let's build the input using zipcode
+        house_example = pd.DataFrame({
+            "bedrooms": [data.bedrooms],
+            "bathrooms": [data.bathrooms],
+            "sqft_living": [data.sqft_living],
+            "floors": [data.floors],
+            "yr_built": [data.yr_built],
+            "zipcode": [data.zipcode]
+        })
+
+        # Let's predict using the models trained with zipcode
+        lr_price = estimate_price(model_zip, house_example)
+        rf_price = estimate_price(rf_model_zip, house_example)
+
+        # Let's keep track of which mode was used
+        zipcode_mode = "known_zipcode"
+
+        # Let's find comparable houses
+        comps = find_comparables(df, house_example)
+
+    else:
+
+        # Let's build the input without zipcode
+        house_example = pd.DataFrame({
+            "bedrooms": [data.bedrooms],
+            "bathrooms": [data.bathrooms],
+            "sqft_living": [data.sqft_living],
+            "floors": [data.floors],
+            "yr_built": [data.yr_built]
+        })
+
+        # Let's predict using the models trained without zipcode
+        lr_price = estimate_price(model_no_zip, house_example)
+        rf_price = estimate_price(rf_model_no_zip, house_example)
+
+        # Let's keep track of which mode was used
+        zipcode_mode = "unknown_zipcode_used_general_model"
+
+        # Let's skip comparables when zipcode is unknown
+        comps = pd.DataFrame()
 
     # Let's give more importance to Random Forest
     predicted_price = (0.2 * lr_price) + (0.8 * rf_price)
-
-    # Let's find comparable houses
-    comps = find_comparables(df, house_example)
 
     # Let's estimate price from comparables
     estimated_price_comps = estimate_price_from_comps(comps, house_example)
@@ -181,13 +232,12 @@ def predict_house(data: HouseInput):
     # Let's estimate price drop risk
     price_drop_risk = estimate_price_drop_risk(difference, data.days_on_market)
 
-    # Let's return the results to the user
     return {
         "estimated_fair_price": round(final_estimated_price, 2),
         "listing_price": round(data.listing_price, 2),
         "price_difference_percent": round(difference, 2),
         "price_status": price_status,
         "price_drop_risk": price_drop_risk,
-        "comparable_houses_found": int(len(comps))
+        "comparable_houses_found": int(len(comps)),
+        "zipcode_mode": zipcode_mode
     }
-    
