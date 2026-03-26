@@ -36,14 +36,27 @@ X_train_app, X_test_app, y_train_app, y_test_app = train_test_split(
 model_app = LinearRegression()
 model_app.fit(X_train_app, y_train_app)
 
-# Let's take one sample house from the test data
-house_example = X_test_app.iloc[[0]]
+# Let's ask the user to enter the house details
+bedrooms = int(input("Enter number of bedrooms: "))
+bathrooms = float(input("Enter number of bathrooms: "))
+sqft_living = int(input("Enter square feet: "))
+floors = float(input("Enter number of floors: "))
+yr_built = int(input("Enter year built: "))
+zipcode = int(input("Enter zipcode: "))
+listing_price = float(input("Enter listing price: "))
 
-# Let's predict the fair price of that house
+# Let's turn the user input into a dataframe the model can read
+house_example = pd.DataFrame({
+    "bedrooms": [bedrooms],
+    "bathrooms": [bathrooms],
+    "sqft_living": [sqft_living],
+    "floors": [floors],
+    "yr_built": [yr_built],
+    "zipcode": [zipcode]
+})
+
+# Let's predict the fair price of the house entered by the user
 predicted_price = model_app.predict(house_example)[0]
-
-# Let's set an example listing price
-listing_price = 560000
 
 # Let's calculate how much the house is overpriced or underpriced
 difference = (listing_price - predicted_price) / predicted_price * 100
@@ -97,3 +110,9 @@ avg_price_sqft = comps["price_per_sqft"].mean()
 estimated_price_comps = avg_price_sqft * house_example["sqft_living"].values[0]
 
 print("Estimated price from comps:", round(estimated_price_comps, 2))
+
+# Let's combine model price and comparable price
+# Let's give more importance to comparable houses
+final_estimated_price = (0.3 * predicted_price) + (0.7 * estimated_price_comps)
+
+print("Final estimated price:", round(final_estimated_price, 2))
