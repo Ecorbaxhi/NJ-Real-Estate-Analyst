@@ -1,5 +1,3 @@
-print("RUNNING CORRECT APP FILE")
-
 # Let's import pandas to work with the dataset
 import pandas as pd
 
@@ -101,6 +99,14 @@ model_app.fit(X_train_app, y_train_app)
 # Let's train a Random Forest model for better predictions
 rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
 rf_model.fit(X_train_app, y_train_app)
+
+# Let's calculate feature importance from Random Forest
+feature_importance = pd.Series(rf_model.feature_importances_, index=features_for_app)
+feature_importance = feature_importance.sort_values(ascending=False)
+
+print("\nTop factors influencing price:")
+for feature, importance in feature_importance.items():
+    print(f"{feature}: {round(importance * 100, 2)}%")
 
 # Let's evaluate Linear Regression
 lr_predictions = model_app.predict(X_test_app)
