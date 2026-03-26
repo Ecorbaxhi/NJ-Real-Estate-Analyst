@@ -1,3 +1,5 @@
+print("RUNNING CORRECT APP FILE")
+
 # Let's import pandas to work with the dataset
 import pandas as pd
 
@@ -7,6 +9,12 @@ from pathlib import Path
 # Let's import the tools to split data and train the model
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
+
+# Let's import Random Forest to test a stronger model
+from sklearn.ensemble import RandomForestRegressor
+
+# Let's import metrics to evaluate our models
+from sklearn.metrics import mean_absolute_error, r2_score
 
 # Let's create a function to estimate fair price using the model
 def estimate_price(model, house):
@@ -90,6 +98,27 @@ X_train_app, X_test_app, y_train_app, y_test_app = train_test_split(
 model_app = LinearRegression()
 model_app.fit(X_train_app, y_train_app)
 
+# Let's train a Random Forest model for better predictions
+rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+rf_model.fit(X_train_app, y_train_app)
+
+# Let's evaluate Linear Regression
+lr_predictions = model_app.predict(X_test_app)
+lr_mae = mean_absolute_error(y_test_app, lr_predictions)
+lr_r2 = r2_score(y_test_app, lr_predictions)
+
+# Let's evaluate Random Forest
+rf_predictions = rf_model.predict(X_test_app)
+rf_mae = mean_absolute_error(y_test_app, rf_predictions)
+rf_r2 = r2_score(y_test_app, rf_predictions)
+
+# Let's print model performance
+print("Linear Regression MAE:", round(lr_mae, 2))
+print("Linear Regression R2:", round(lr_r2, 3))
+
+print("Random Forest MAE:", round(rf_mae, 2))
+print("Random Forest R2:", round(rf_r2, 3))
+
 # Let's ask the user to enter the house details
 bedrooms = int(input("Enter number of bedrooms: "))
 bathrooms = float(input("Enter number of bathrooms: "))
@@ -109,8 +138,18 @@ house_example = pd.DataFrame({
     "zipcode": [zipcode]
 })
 
-# Let's predict the fair price of the house entered by the user
-predicted_price = estimate_price(model_app, house_example)
+# Let's predict price using Linear Regression
+lr_price = estimate_price(model_app, house_example)
+
+# Let's predict price using Random Forest
+rf_price = estimate_price(rf_model, house_example)
+
+# Let's give more importance to Random Forest based on better performance
+# We weight models based on performance (Random Forest performs better)
+predicted_price = (0.2 * lr_price) + (0.8 * rf_price)
+
+print("Linear Regression price:", round(lr_price, 2))
+print("Random Forest price:", round(rf_price, 2))
 
 # Let's calculate how much the house is overpriced or underpriced
 difference = (listing_price - predicted_price) / predicted_price * 100
