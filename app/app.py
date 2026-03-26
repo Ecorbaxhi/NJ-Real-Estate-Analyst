@@ -62,3 +62,38 @@ elif difference < -5:
     print("This house appears underpriced.")
 else:
     print("This house price looks fair.")
+
+# Let's find comparable houses based on similar features
+def find_comparables(df, house, tolerance=0.15):
+
+    zipcode = house["zipcode"].values[0]
+    sqft = house["sqft_living"].values[0]
+    bedrooms = house["bedrooms"].values[0]
+    bathrooms = house["bathrooms"].values[0]
+    year = house["yr_built"].values[0]
+
+    comps = df[
+        (df["zipcode"] == zipcode) &
+        (df["sqft_living"].between(sqft * 0.85, sqft * 1.15)) &
+        (df["bedrooms"].between(bedrooms - 1, bedrooms + 1)) &
+        (df["bathrooms"].between(bathrooms - 0.5, bathrooms + 0.5)) &
+        (df["yr_built"].between(year - 10, year + 10))
+    ]
+
+    return comps.copy()
+
+
+# Let's find comparable houses for our example
+comps = find_comparables(df, house_example)
+
+print("Comparable houses found:", len(comps))
+print("Average comparable price:", round(comps["price"].mean(), 2))
+
+# Let's calculate price per sqft for comparables
+comps["price_per_sqft"] = comps["price"] / comps["sqft_living"]
+
+# Let's estimate price using average price per sqft
+avg_price_sqft = comps["price_per_sqft"].mean()
+estimated_price_comps = avg_price_sqft * house_example["sqft_living"].values[0]
+
+print("Estimated price from comps:", round(estimated_price_comps, 2))
