@@ -8,6 +8,60 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 
+# Let's create a function to estimate fair price using the model
+def estimate_price(model, house):
+    return model.predict(house)[0]
+
+# Let's create a function to estimate price from comparable houses
+def estimate_price_from_comps(comps, house):
+    
+    # Let's make sure we have comparable houses
+    if len(comps) == 0:
+        return None
+
+    comps["price_per_sqft"] = comps["price"] / comps["sqft_living"]
+    avg_price_sqft = comps["price_per_sqft"].mean()
+    estimated_price_comps = avg_price_sqft * house["sqft_living"].values[0]
+
+    return estimated_price_comps
+
+# Let's combine model price and comps price in a smarter way
+def combine_prices(predicted_price, estimated_price_comps, comps_count):
+    if comps_count >= 20:
+        return (0.3 * predicted_price) + (0.7 * estimated_price_comps)
+    elif comps_count >= 10:
+        return (0.5 * predicted_price) + (0.5 * estimated_price_comps)
+    else:
+        return (0.7 * predicted_price) + (0.3 * estimated_price_comps)
+
+# Let's create a function to estimate price drop risk
+def estimate_price_drop_risk(difference, days_on_market):
+    if difference > 10 or days_on_market > 60:
+        return "HIGH"
+    elif difference > 5 or days_on_market > 30:
+        return "MEDIUM"
+    else:
+        return "LOW"
+    
+# Let's find comparable houses based on similar features
+def find_comparables(df, house, tolerance=0.15):
+
+    zipcode = house["zipcode"].values[0]
+    sqft = house["sqft_living"].values[0]
+    bedrooms = house["bedrooms"].values[0]
+    bathrooms = house["bathrooms"].values[0]
+    year = house["yr_built"].values[0]
+
+    comps = df[
+        (df["zipcode"] == zipcode) &
+        (df["sqft_living"].between(sqft * 0.85, sqft * 1.15)) &
+        (df["bedrooms"].between(bedrooms - 1, bedrooms + 1)) &
+        (df["bathrooms"].between(bathrooms - 0.5, bathrooms + 0.5)) &
+        (df["yr_built"].between(year - 10, year + 10))
+    ]
+
+    return comps.copy()
+
 # Let's build the correct path to the dataset
 data_path = Path(__file__).resolve().parent.parent / "data" / "kc_house_data.csv"
 
@@ -56,7 +110,7 @@ house_example = pd.DataFrame({
 })
 
 # Let's predict the fair price of the house entered by the user
-predicted_price = model_app.predict(house_example)[0]
+predicted_price = estimate_price(model_app, house_example)
 
 # Let's calculate how much the house is overpriced or underpriced
 difference = (listing_price - predicted_price) / predicted_price * 100
@@ -76,25 +130,6 @@ elif difference < -5:
 else:
     print("This house price looks fair.")
 
-# Let's find comparable houses based on similar features
-def find_comparables(df, house, tolerance=0.15):
-
-    zipcode = house["zipcode"].values[0]
-    sqft = house["sqft_living"].values[0]
-    bedrooms = house["bedrooms"].values[0]
-    bathrooms = house["bathrooms"].values[0]
-    year = house["yr_built"].values[0]
-
-    comps = df[
-        (df["zipcode"] == zipcode) &
-        (df["sqft_living"].between(sqft * 0.85, sqft * 1.15)) &
-        (df["bedrooms"].between(bedrooms - 1, bedrooms + 1)) &
-        (df["bathrooms"].between(bathrooms - 0.5, bathrooms + 0.5)) &
-        (df["yr_built"].between(year - 10, year + 10))
-    ]
-
-    return comps.copy()
-
 
 # Let's find comparable houses for our example
 comps = find_comparables(df, house_example)
@@ -102,17 +137,29 @@ comps = find_comparables(df, house_example)
 print("Comparable houses found:", len(comps))
 print("Average comparable price:", round(comps["price"].mean(), 2))
 
-# Let's calculate price per sqft for comparables
-comps["price_per_sqft"] = comps["price"] / comps["sqft_living"]
+# Let's estimate price using comparable houses
+estimated_price_comps = estimate_price_from_comps(comps, house_example)
 
-# Let's estimate price using average price per sqft
-avg_price_sqft = comps["price_per_sqft"].mean()
-estimated_price_comps = avg_price_sqft * house_example["sqft_living"].values[0]
+# Let's safely print comparable price
+if estimated_price_comps is not None:
+    print("Estimated price from comps:", round(estimated_price_comps, 2))
+else:
+    print("No comparable houses found. Using model only.")
 
-print("Estimated price from comps:", round(estimated_price_comps, 2))
-
-# Let's combine model price and comparable price
-# Let's give more importance to comparable houses
-final_estimated_price = (0.3 * predicted_price) + (0.7 * estimated_price_comps)
+# Let's calculate the final estimated price using smart weighting
+# Let's handle the case where no comparables are found
+if estimated_price_comps is None:
+    final_estimated_price = predicted_price
+else:
+    final_estimated_price = combine_prices(predicted_price, estimated_price_comps, len(comps))
 
 print("Final estimated price:", round(final_estimated_price, 2))
+
+# Let's ask the user how long the house has been listed
+days_on_market = int(input("Enter days on market: "))
+
+# Let's estimate the final price drop risk
+price_drop_risk = estimate_price_drop_risk(difference, days_on_market)
+
+print("Price drop risk:", price_drop_risk)
+
