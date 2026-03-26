@@ -93,6 +93,8 @@ def find_comparables(df, house):
 data_path = Path(__file__).resolve().parent.parent / "data" / "kc_house_data.csv"
 df = pd.read_csv(data_path)
 
+df["zipcode"] = df["zipcode"].astype(int)
+
 # Let's store the valid zipcodes present in the dataset
 valid_zipcodes = set(df["zipcode"].unique())
 
@@ -157,6 +159,8 @@ def home():
 # Let's create the main prediction route that receives user input
 @app.post("/predict")
 def predict_house(data: HouseInput):
+    
+    data.zipcode = int(data.zipcode)
 
     # Let's choose the right model depending on whether the zipcode is known
     if data.zipcode in valid_zipcodes:
