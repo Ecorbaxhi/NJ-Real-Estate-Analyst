@@ -180,6 +180,9 @@ def predict_house(data: HouseInput):
     # Let's choose the right model depending on whether the zipcode is known
     if data.zipcode in valid_zipcodes:
 
+        # Convert zipcode to int for the model
+        zipcode_int = int(data.zipcode)
+
         # Let's build the input using zipcode
         house_example = pd.DataFrame({
             "bedrooms": [data.bedrooms],
