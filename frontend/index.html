@@ -1,0 +1,115 @@
+<!-- We are creating a simple frontend page for the NJ Real Estate Analyst app -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NJ Real Estate Analyst</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f7f7f7;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        button {
+            background: #222;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #result {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>NJ Real Estate Analyst</h1>
+
+    <form id="houseForm">
+        <input type="number" id="bedrooms" placeholder="Bedrooms" required>
+        <input type="number" id="bathrooms" placeholder="Bathrooms" step="0.5" required>
+        <input type="number" id="sqft_living" placeholder="Square Feet" required>
+        <input type="number" id="floors" placeholder="Floors" step="0.5" required>
+        <input type="number" id="yr_built" placeholder="Year Built" required>
+        <input type="text" id="zipcode" placeholder="Zipcode" required>
+        <input type="number" id="listing_price" placeholder="Listing Price" required>
+        <input type="number" id="days_on_market" placeholder="Days on Market" required>
+
+        <button type="submit">Estimate Price</button>
+    </form>
+
+    <div id="result">Results will appear here.</div>
+
+    <script>
+        // We connect the form to your live backend API
+        document.getElementById("houseForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const data = {
+                bedrooms: parseInt(document.getElementById("bedrooms").value),
+                bathrooms: parseFloat(document.getElementById("bathrooms").value),
+                sqft_living: parseInt(document.getElementById("sqft_living").value),
+                floors: parseFloat(document.getElementById("floors").value),
+                yr_built: parseInt(document.getElementById("yr_built").value),
+                zipcode: document.getElementById("zipcode").value,
+                listing_price: parseFloat(document.getElementById("listing_price").value),
+                days_on_market: parseInt(document.getElementById("days_on_market").value)
+            };
+
+            const resultDiv = document.getElementById("result");
+            resultDiv.textContent = "Loading...";
+
+            try {
+                const response = await fetch("https://nj-real-estate-analyst.onrender.com/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                resultDiv.textContent =
+                    "Estimated Fair Price: $" + result.estimated_fair_price + "\n" +
+                    "Listing Price: $" + result.listing_price + "\n" +
+                    "Price Difference (%): " + result.price_difference_percent + "%\n" +
+                    "Price Status: " + result.price_status + "\n" +
+                    "Price Drop Risk: " + result.price_drop_risk + "\n" +
+                    "Comparable Houses Found: " + result.comparable_houses_found + "\n" +
+                    "Zipcode Mode: " + result.zipcode_mode;
+            } catch (error) {
+                resultDiv.textContent = "Error connecting to the backend.";
+            }
+        });
+    </script>
+
+</body>
+</html>
