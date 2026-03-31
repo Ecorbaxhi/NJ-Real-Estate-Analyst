@@ -89,10 +89,10 @@ def find_comparables(df, house):
         (comps["bedrooms"] <= bedrooms + 1)
     ]
 
-    # Let's filter by zipcode ONLY if it exists in input
+   # Let's filter by zipcode ONLY if it exists in input
     if "zipcode" in house.columns:
-    zipcode = str(house["zipcode"].values[0]).zfill(5)
-    comps = comps[comps["zipcode_str"] == zipcode]
+        zipcode = str(house["zipcode"].values[0]).zfill(5)
+        comps = comps[comps["zipcode_str"] == zipcode]
 
     # Let's calculate similarity score (distance)
     comps["distance"] = (
