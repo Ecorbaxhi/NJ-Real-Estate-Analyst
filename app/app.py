@@ -91,8 +91,8 @@ def find_comparables(df, house):
 
     # Let's filter by zipcode ONLY if it exists in input
     if "zipcode" in house.columns:
-        zipcode = house["zipcode"].values[0]
-        comps = comps[comps["zipcode"] == zipcode]
+    zipcode = str(house["zipcode"].values[0]).zfill(5)
+    comps = comps[comps["zipcode_str"] == zipcode]
 
     # Let's calculate similarity score (distance)
     comps["distance"] = (
@@ -110,10 +110,13 @@ def find_comparables(df, house):
 # Let's load the dataset from the data folder
 data_path = Path(__file__).resolve().parent.parent / "data" / "kc_house_data.csv"
 df = pd.read_csv(data_path)
-df["zipcode"] = df["zipcode"].astype(str)
+
+# Let's store zipcode as string for matching and as numeric for the model
+df["zipcode_str"] = df["zipcode"].astype(str).str.zfill(5)
+df["zipcode_num"] = df["zipcode"].astype(int)
 
 # Let's store the valid zipcodes present in the dataset
-valid_zipcodes = set(df["zipcode"].unique())
+valid_zipcodes = set(df["zipcode_str"].unique())
 
 
 # Let's define features WITH zipcode (location-aware model)
@@ -191,7 +194,7 @@ def predict_house(data: HouseInput):
             "sqft_living": [data.sqft_living],
             "floors": [data.floors],
             "yr_built": [data.yr_built],
-            "zipcode": [data.zipcode]
+            "zipcode": [zipcode_int]
         })
 
         # Let's predict using the models trained with zipcode
