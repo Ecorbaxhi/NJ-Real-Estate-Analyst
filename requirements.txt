@@ -1,0 +1,7 @@
+# We list all the libraries needed for the backend to run on Render
+
+fastapi
+uvicorn
+pandas
+scikit-learn
+pydantic

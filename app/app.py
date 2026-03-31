@@ -69,24 +69,42 @@ def estimate_price_drop_risk(difference, days_on_market):
         return "LOW"
 
 
-# Let's find comparable houses based on similar features
+# Let's find comparable houses using smarter filters
 def find_comparables(df, house):
 
-    zipcode = house["zipcode"].values[0]
-    sqft = house["sqft_living"].values[0]
-    bedrooms = house["bedrooms"].values[0]
-    bathrooms = house["bathrooms"].values[0]
-    year = house["yr_built"].values[0]
+    # Let's start with the full dataset
+    comps = df.copy()
 
-    comps = df[
-        (df["zipcode"] == zipcode) &
-        (df["sqft_living"].between(sqft * 0.85, sqft * 1.15)) &
-        (df["bedrooms"].between(bedrooms - 1, bedrooms + 1)) &
-        (df["bathrooms"].between(bathrooms - 0.5, bathrooms + 0.5)) &
-        (df["yr_built"].between(year - 10, year + 10))
+    # Let's filter by square footage (±20%)
+    sqft = house["sqft_living"].values[0]
+    comps = comps[
+        (comps["sqft_living"] >= 0.8 * sqft) &
+        (comps["sqft_living"] <= 1.2 * sqft)
     ]
 
-    return comps.copy()
+    # Let's filter by bedrooms (±1)
+    bedrooms = house["bedrooms"].values[0]
+    comps = comps[
+        (comps["bedrooms"] >= bedrooms - 1) &
+        (comps["bedrooms"] <= bedrooms + 1)
+    ]
+
+    # Let's filter by zipcode ONLY if it exists in input
+    if "zipcode" in house.columns:
+        zipcode = house["zipcode"].values[0]
+        comps = comps[comps["zipcode"] == zipcode]
+
+    # Let's calculate similarity score (distance)
+    comps["distance"] = (
+        abs(comps["sqft_living"] - sqft) +
+        abs(comps["bedrooms"] - bedrooms)
+    )
+
+    # Let's sort by most similar houses
+    comps = comps.sort_values(by="distance")
+
+    # Let's return top 20 most similar houses
+    return comps.head(20)
 
 
 # Let's load the dataset from the data folder
@@ -242,3 +260,4 @@ def predict_house(data: HouseInput):
         "comparable_houses_found": int(len(comps)),
         "zipcode_mode": zipcode_mode
     }
+
