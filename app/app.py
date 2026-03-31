@@ -5,6 +5,9 @@ import pandas as pd
 # Let's import FastAPI to create our web application
 from fastapi import FastAPI
 
+# Let's allow frontend to talk with backend
+from fastapi.middleware.cors import CORSMiddleware
+
 # Let's import BaseModel to define the input structure
 from pydantic import BaseModel
 
@@ -16,6 +19,13 @@ from sklearn.ensemble import RandomForestRegressor
 # Let's create the FastAPI app
 app = FastAPI(title="NJ Real Estate Analyst API")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Let's define the structure of the input data coming from the user
 class HouseInput(BaseModel):
