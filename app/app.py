@@ -167,8 +167,9 @@ rf_model_no_zip = RandomForestRegressor(n_estimators=100, random_state=42)
 rf_model_no_zip.fit(X_train_no_zip, y_train_no_zip)
 
 
+
 # Let's create a simple route to check if the API is running
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def home():
     return {"message": "NJ Real Estate Analyst API is running"}
 
