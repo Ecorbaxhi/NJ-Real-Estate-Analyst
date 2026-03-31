@@ -59,14 +59,33 @@ def combine_prices(predicted_price, estimated_price_comps, comps_count):
         return (0.7 * predicted_price) + (0.3 * estimated_price_comps)
 
 
-# Let's create a function to estimate price drop risk
+# Let's estimate price drop risk using BOTH days on market and overpricing
 def estimate_price_drop_risk(difference, days_on_market):
-    if difference > 10 or days_on_market > 60:
-        return "HIGH"
-    elif difference > 5 or days_on_market > 30:
+
+    # Step 1: Base risk from days on market
+    if days_on_market <= 30:
+        risk_score = 1   # LOW
+    elif days_on_market <= 60:
+        risk_score = 2   # MEDIUM
+    else:
+        risk_score = 3   # HIGH
+
+    # Step 2: Adjust based on pricing
+    if difference > 10:
+        risk_score += 1   # significantly overpriced → increase risk
+    elif difference < -5:
+        risk_score -= 1   # underpriced → decrease risk
+
+    # Step 3: Keep score between 1 and 3
+    risk_score = max(1, min(risk_score, 3))
+
+    # Step 4: Convert to label
+    if risk_score == 1:
+        return "LOW"
+    elif risk_score == 2:
         return "MEDIUM"
     else:
-        return "LOW"
+        return "HIGH"
 
 
 # Let's find comparable houses using smarter filters
