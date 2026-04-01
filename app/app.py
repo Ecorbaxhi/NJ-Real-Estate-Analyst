@@ -210,6 +210,32 @@ def home():
 @app.post("/predict")
 def predict_house(data: HouseInput):
 
+# Let's generate a human explanation for the result
+def generate_explanation(price_diff_pct, days_on_market, comps_count):
+
+    explanation = ""
+
+    # Price logic
+    if price_diff_pct > 10:
+        explanation += "The property is significantly overpriced compared to similar homes. "
+    elif price_diff_pct > 0:
+        explanation += "The property is slightly overpriced compared to similar homes. "
+    else:
+        explanation += "The property is priced below market value. "
+
+    # Time on market logic
+    if days_on_market > 60:
+        explanation += "It has been on the market for a long time, increasing the likelihood of a price drop. "
+    elif days_on_market > 30:
+        explanation += "It has been on the market for a moderate period. "
+
+    # Comparables logic
+    if comps_count < 5:
+        explanation += "However, few comparable properties were found, so the estimate may be less reliable."
+
+    return explanation.strip()
+
+
     # Let's choose the right model depending on whether the zipcode is known
     if data.zipcode in valid_zipcodes:
 
@@ -287,13 +313,19 @@ def predict_house(data: HouseInput):
     # Let's estimate price drop risk
     price_drop_risk = estimate_price_drop_risk(difference, data.days_on_market)
 
-    return {
-        "estimated_fair_price": round(final_estimated_price, 2),
-        "listing_price": round(data.listing_price, 2),
-        "price_difference_percent": round(difference, 2),
-        "price_status": price_status,
-        "price_drop_risk": price_drop_risk,
-        "comparable_houses_found": int(len(comps)),
-        "zipcode_mode": zipcode_mode
-    }
+explanation = generate_explanation(
+    price_difference_percent,
+    data.days_on_market,
+    len(comps)
+)
+return {
+    "estimated_fair_price": round(final_estimated_price, 2),
+    "listing_price": round(data.listing_price, 2),
+    "price_difference_percent": round(difference, 2),
+    "price_status": price_status,
+    "price_drop_risk": price_drop_risk,
+    "comparable_houses_found": int(len(comps)),
+    "zipcode_mode": zipcode_mode,
+    "explanation": explanation,
+}
 
