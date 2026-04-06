@@ -1,54 +1,74 @@
-<!-- We are creating a simple frontend page for the NJ Real Estate Analyst app -->
+<!-- NJ Real Estate Analyst - Improved Frontend -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NJ Real Estate Analyst</title>
+
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 700px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f7f7f7;
-        }
-
-        h1 {
+            font-family: Arial;
+            background-color: #f4f6f8;
             text-align: center;
         }
 
-        form {
+        .container {
             background: white;
-            padding: 20px;
+            padding: 30px;
+            margin: 50px auto;
+            width: 400px;
             border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
         }
 
-        input, button {
-            width: 100%;
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 90%;
             padding: 10px;
-            margin-top: 10px;
-            margin-bottom: 15px;
-            font-size: 16px;
+            margin: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
         }
 
         button {
-            background: #222;
+            width: 95%;
+            padding: 12px;
+            background: black;
             color: white;
             border: none;
+            border-radius: 5px;
             cursor: pointer;
         }
 
-        #result {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            white-space: pre-wrap;
+        button:hover {
+            background: #333;
         }
+
+        .result {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+            display: inline-block;
+        }
+
+        .red { background: #e74c3c; }
+        .green { background: #2ecc71; }
+        .orange { background: #f39c12; }
     </style>
 </head>
+
 <body>
+
+<div class="container">
 
     <h1>NJ Real Estate Analyst</h1>
 
@@ -65,52 +85,75 @@
         <button type="submit">Estimate Price</button>
     </form>
 
-    <div id="result">Results will appear here.</div>
+    <div id="result" class="result">Results will appear here.</div>
 
-    <script>
-        // We connect the form to your live backend API
-        document.getElementById("houseForm").addEventListener("submit", async function(event) {
-            event.preventDefault();
+</div>
 
-            const data = {
-                bedrooms: parseInt(document.getElementById("bedrooms").value),
-                bathrooms: parseFloat(document.getElementById("bathrooms").value),
-                sqft_living: parseInt(document.getElementById("sqft_living").value),
-                floors: parseFloat(document.getElementById("floors").value),
-                yr_built: parseInt(document.getElementById("yr_built").value),
-                zipcode: document.getElementById("zipcode").value,
-                listing_price: parseFloat(document.getElementById("listing_price").value),
-                days_on_market: parseInt(document.getElementById("days_on_market").value)
-            };
+<script>
+document.getElementById("houseForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
 
-            const resultDiv = document.getElementById("result");
-            resultDiv.textContent = "Loading...";
+    const data = {
+        bedrooms: parseInt(document.getElementById("bedrooms").value),
+        bathrooms: parseFloat(document.getElementById("bathrooms").value),
+        sqft_living: parseInt(document.getElementById("sqft_living").value),
+        floors: parseFloat(document.getElementById("floors").value),
+        yr_built: parseInt(document.getElementById("yr_built").value),
+        zipcode: document.getElementById("zipcode").value,
+        listing_price: parseFloat(document.getElementById("listing_price").value),
+        days_on_market: parseInt(document.getElementById("days_on_market").value)
+    };
 
-            try {
-                const response = await fetch("https://nj-real-estate-analyst.onrender.com/predict", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(data)
-                });
+    const resultDiv = document.getElementById("result");
+    resultDiv.innerHTML = "Loading...";
 
-                const result = await response.json();
-
-                resultDiv.textContent =
-                    "Estimated Fair Price: $" + result.estimated_fair_price + "\n" +
-                    "Listing Price: $" + result.listing_price + "\n" +
-                    "Price Difference (%): " + result.price_difference_percent + "%\n" +
-                    "Price Status: " + result.price_status + "\n" +
-                    "Price Drop Risk: " + result.price_drop_risk + "\n" +
-                    "Comparable Houses Found: " + result.comparable_houses_found + "\n" +
-                    "Zipcode Mode: " + result.zipcode_mode + "\n" +
-                    "Explanation: " + result.explanation;
-            } catch (error) {
-                resultDiv.textContent = "Error connecting to the backend.";
-            }
+    try {
+        const response = await fetch("https://nj-real-estate-analyst.onrender.com/predict", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
         });
-    </script>
+
+        const result = await response.json();
+
+        // Dynamic colors
+        let statusColor = result.price_status === "Overpriced" ? "red" :
+                          result.price_status === "Underpriced" ? "green" : "orange";
+
+        let riskColor = result.price_drop_risk === "HIGH" ? "red" :
+                        result.price_drop_risk === "MEDIUM" ? "orange" : "green";
+
+        resultDiv.innerHTML = `
+            <h3>Results</h3>
+            <p><b>Estimated Fair Price:</b> $${result.estimated_fair_price}</p>
+            <p><b>Listing Price:</b> $${result.listing_price}</p>
+            <p><b>Difference:</b> ${result.price_difference_percent}%</p>
+
+            <p><b>Status:</b> 
+                <span class="badge ${statusColor}">
+                    ${result.price_status}
+                </span>
+            </p>
+
+            <p><b>Risk:</b> 
+                <span class="badge ${riskColor}">
+                    ${result.price_drop_risk}
+                </span>
+            </p>
+
+            <p><b>Comparables Found:</b> ${result.comparable_houses_found}</p>
+
+            <p><b>Explanation:</b><br>
+            ${result.explanation}</p>
+        `;
+
+    } catch (error) {
+        resultDiv.innerHTML = "Error connecting to backend.";
+    }
+});
+</script>
 
 </body>
 </html>
