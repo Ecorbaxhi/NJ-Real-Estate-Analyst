@@ -278,11 +278,75 @@ def get_coordinates(address):
 
     return lat, lon
 
+# Let's find nearby places using OpenStreetMap (Overpass API)
+def get_nearby_places(lat, lon):
+
+    url = "http://overpass-api.de/api/interpreter"
+
+    query = f"""
+    [out:json];
+    (
+      node(around:1000,{lat},{lon})["amenity"="school"];
+      node(around:1000,{lat},{lon})["amenity"="hospital"];
+      node(around:1000,{lat},{lon})["shop"="supermarket"];
+      node(around:1000,{lat},{lon})["railway"="station"];
+      node(around:1000,{lat},{lon})["leisure"="park"];
+    );
+    out;
+    """
+
+    try:
+        response = requests.get(url, params={"data": query})
+        data = response.json()
+        return data
+    except:
+        return None
+
+
+# Let's count nearby places by category
+def summarize_nearby_places(nearby_data):
+
+    summary = {
+        "schools": 0,
+        "hospitals": 0,
+        "supermarkets": 0,
+        "stations": 0,
+        "parks": 0
+    }
+
+    if nearby_data is None or "elements" not in nearby_data:
+        return summary
+
+    for place in nearby_data["elements"]:
+        tags = place.get("tags", {})
+
+        if tags.get("amenity") == "school":
+            summary["schools"] += 1
+        elif tags.get("amenity") == "hospital":
+            summary["hospitals"] += 1
+        elif tags.get("shop") == "supermarket":
+            summary["supermarkets"] += 1
+        elif tags.get("railway") == "station":
+            summary["stations"] += 1
+        elif tags.get("leisure") == "park":
+            summary["parks"] += 1
+
+    return summary
+
 
 # Let's create the main prediction route that receives user input
 @app.post("/predict")
 def predict_house(data: HouseInput):
 
+    # Let's build full address
+    full_address = f"{data.address}, {data.zipcode}"
+
+    # Let's get coordinates
+    lat, lon = get_coordinates(full_address)
+
+    # Let's get nearby places
+    nearby_places = get_nearby_places(lat, lon) if lat and lon else None
+    nearby_summary = summarize_nearby_places(nearby_places)
 
     # Let's choose the right model depending on whether the zipcode is known
     if data.zipcode in valid_zipcodes:
@@ -376,4 +440,5 @@ def predict_house(data: HouseInput):
         "comparable_houses_found": int(len(comps)),
         "zipcode_mode": zipcode_mode,
         "explanation": explanation,
+        "nearby_places": nearby_summary,
     }
