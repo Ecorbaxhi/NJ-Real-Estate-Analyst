@@ -339,7 +339,7 @@ def summarize_nearby_places(nearby_data):
 def predict_house(data: HouseInput):
 
     # Let's build full address
-    full_address = f"{data.address}, {data.zipcode}"
+    full_address = f"{data.address}, {data.zipcode}" if data.address else data.zipcode
 
     # Let's get coordinates
     lat, lon = get_coordinates(full_address)
