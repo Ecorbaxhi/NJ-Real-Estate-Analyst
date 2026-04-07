@@ -35,6 +35,7 @@ class HouseInput(BaseModel):
     floors: float
     yr_built: int
     zipcode: str
+    address: str   # 👈 NEW
     listing_price: float
     days_on_market: int
 
@@ -252,6 +253,30 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count):
         explanation += "However, few comparable properties were found, so the estimate may be less reliable."
 
     return explanation.strip()
+
+
+# Let's convert address into latitude and longitude using OpenStreetMap
+import requests
+
+def get_coordinates(address):
+    url = "https://nominatim.openstreetmap.org/search"
+
+    params = {
+        "q": address,
+        "format": "json",
+        "limit": 1
+    }
+
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    if len(data) == 0:
+        return None, None
+
+    lat = float(data[0]["lat"])
+    lon = float(data[0]["lon"])
+
+    return lat, lon
 
 
 # Let's create the main prediction route that receives user input
