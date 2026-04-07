@@ -258,6 +258,7 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count):
 # Let's convert address into latitude and longitude using OpenStreetMap
 import requests
 
+# Let's convert address into latitude and longitude using OpenStreetMap
 def get_coordinates(address):
     url = "https://nominatim.openstreetmap.org/search"
 
@@ -267,21 +268,28 @@ def get_coordinates(address):
         "limit": 1
     }
 
-    response = requests.get(url, params=params)
-    data = response.json()
+    headers = {
+        "User-Agent": "NJ-Real-Estate-Analyst/1.0"
+    }
 
-    if len(data) == 0:
+    try:
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        data = response.json()
+
+        if len(data) == 0:
+            return None, None
+
+        lat = float(data[0]["lat"])
+        lon = float(data[0]["lon"])
+        return lat, lon
+    except:
         return None, None
 
-    lat = float(data[0]["lat"])
-    lon = float(data[0]["lon"])
-
-    return lat, lon
 
 # Let's find nearby places using OpenStreetMap (Overpass API)
 def get_nearby_places(lat, lon):
 
-    url = "http://overpass-api.de/api/interpreter"
+    url = "https://overpass-api.de/api/interpreter"
 
     query = f"""
     [out:json];
@@ -295,8 +303,12 @@ def get_nearby_places(lat, lon):
     out;
     """
 
+    headers = {
+        "User-Agent": "NJ-Real-Estate-Analyst/1.0"
+    }
+
     try:
-        response = requests.get(url, params={"data": query})
+        response = requests.get(url, params={"data": query}, headers=headers, timeout=15)
         data = response.json()
         return data
     except:
