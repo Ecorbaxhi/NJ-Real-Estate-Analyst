@@ -98,41 +98,67 @@ def estimate_price_drop_risk(difference, days_on_market):
         return "HIGH"
 
 
-# Let's find comparable houses using smarter filters
+# Let's find comparable houses using more realistic filters
 def find_comparables(df, house):
 
     # Let's start with the full dataset
     comps = df.copy()
 
-    # Let's filter by square footage (±20%)
+    # Let's read the house features
     sqft = house["sqft_living"].values[0]
+    bedrooms = house["bedrooms"].values[0]
+    bathrooms = house["bathrooms"].values[0]
+    floors = house["floors"].values[0]
+    year = house["yr_built"].values[0]
+
+    # Let's filter by square footage (±20%)
     comps = comps[
         (comps["sqft_living"] >= 0.8 * sqft) &
         (comps["sqft_living"] <= 1.2 * sqft)
     ]
 
     # Let's filter by bedrooms (±1)
-    bedrooms = house["bedrooms"].values[0]
     comps = comps[
         (comps["bedrooms"] >= bedrooms - 1) &
         (comps["bedrooms"] <= bedrooms + 1)
     ]
 
-   # Let's filter by zipcode ONLY if it exists in input
+    # Let's filter by bathrooms (±1)
+    comps = comps[
+        (comps["bathrooms"] >= bathrooms - 1) &
+        (comps["bathrooms"] <= bathrooms + 1)
+    ]
+
+    # Let's filter by floors (exact or very close)
+    comps = comps[
+        (comps["floors"] >= floors - 0.5) &
+        (comps["floors"] <= floors + 0.5)
+    ]
+
+    # Let's filter by year built (±10 years)
+    comps = comps[
+        (comps["yr_built"] >= year - 10) &
+        (comps["yr_built"] <= year + 10)
+    ]
+
+    # Let's filter by zipcode only if it exists in input
     if "zipcode" in house.columns:
         zipcode = str(house["zipcode"].values[0]).zfill(5)
         comps = comps[comps["zipcode_str"] == zipcode]
 
-    # Let's calculate similarity score (distance)
+    # Let's calculate a similarity score
     comps["distance"] = (
         abs(comps["sqft_living"] - sqft) +
-        abs(comps["bedrooms"] - bedrooms)
+        abs(comps["bedrooms"] - bedrooms) * 200 +
+        abs(comps["bathrooms"] - bathrooms) * 150 +
+        abs(comps["floors"] - floors) * 100 +
+        abs(comps["yr_built"] - year) * 10
     )
 
     # Let's sort by most similar houses
     comps = comps.sort_values(by="distance")
 
-    # Let's return top 20 most similar houses
+    # Let's return the top 20 most similar houses
     return comps.head(20)
 
 
