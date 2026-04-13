@@ -300,7 +300,8 @@ def get_coordinates(address):
 # Let's find nearby places using OpenStreetMap (Overpass API)
 def get_nearby_places(lat, lon):
 
-    url = "https://overpass-api.de/api/interpreter"
+    # Let's use a more reliable Overpass server
+    url = "https://overpass.kumi.systems/api/interpreter"
 
     # Let's search nearby places using nodes, ways, and relations
     query = f"""
