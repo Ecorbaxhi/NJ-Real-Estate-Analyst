@@ -406,8 +406,8 @@ def calculate_location_score(nearby_summary):
 @app.post("/predict")
 def predict_house(data: HouseInput):
 
-    # Let's build full address
-    full_address = f"{data.address}, {data.zipcode}" if data.address else data.zipcode
+    # Let's build a more complete address for better geocoding
+    full_address = f"{data.address}, {data.zipcode}, USA"
 
     # Let's get coordinates
     lat, lon = get_coordinates(full_address)
