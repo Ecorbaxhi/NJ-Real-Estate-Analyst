@@ -356,6 +356,8 @@ def predict_house(data: HouseInput):
     # Let's get coordinates
     lat, lon = get_coordinates(full_address)
 
+
+
     # Let's get nearby places
     nearby_places = get_nearby_places(lat, lon) if lat and lon else None
     nearby_summary = summarize_nearby_places(nearby_places)
@@ -407,6 +409,7 @@ def predict_house(data: HouseInput):
         # Let's skip comparables when zipcode is unknown
         comps = pd.DataFrame()
 
+
     # Let's give more importance to Random Forest
     predicted_price = (0.2 * lr_price) + (0.8 * rf_price)
 
@@ -422,6 +425,18 @@ def predict_house(data: HouseInput):
             estimated_price_comps,
             len(comps)
         )
+
+    # Let's adjust price based on nearby amenities
+    location_bonus = (
+        nearby_summary["schools"] * 5000 +
+        nearby_summary["stations"] * 8000 +
+        nearby_summary["supermarkets"] * 3000 +
+        nearby_summary["parks"] * 2000 +
+        nearby_summary["hospitals"] * 4000
+    )
+
+    # Let's add the location bonus to the final estimated price
+    final_estimated_price += location_bonus
 
     # Let's calculate the price difference
     difference = (data.listing_price - final_estimated_price) / final_estimated_price * 100
