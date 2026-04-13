@@ -232,11 +232,12 @@ rf_model_no_zip.fit(X_train_no_zip, y_train_no_zip)
 def home():
     return {"message": "NJ Real Estate Analyst API is running"}
 
-# Let's generate a human explanation for the result
-def generate_explanation(price_diff_pct, days_on_market, comps_count):
+# Let's generate a human explanation for the result including location quality
+def generate_explanation(price_diff_pct, days_on_market, comps_count, location_score):
 
     explanation = ""
 
+    # Price logic
     if price_diff_pct > 10:
         explanation += "The property is significantly overpriced compared to similar homes. "
     elif price_diff_pct > 0:
@@ -244,11 +245,21 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count):
     else:
         explanation += "The property is priced below market value. "
 
+    # Time on market
     if days_on_market > 60:
         explanation += "It has been on the market for a long time, increasing the likelihood of a price drop. "
     elif days_on_market > 30:
         explanation += "It has been on the market for a moderate period. "
 
+    # Location logic (NEW)
+    if location_score > 0.7:
+        explanation += "The location is very strong, with many nearby amenities such as schools, parks, and transport. "
+    elif location_score > 0.4:
+        explanation += "The location is average, with some nearby amenities. "
+    else:
+        explanation += "The location has limited nearby amenities, which may affect the value. "
+
+    # Reliability
     if comps_count < 5:
         explanation += "However, few comparable properties were found, so the estimate may be less reliable."
 
@@ -346,6 +357,36 @@ def summarize_nearby_places(nearby_data):
     return summary
 
 
+# Let's convert nearby places into a normalized location score (0 to 1)
+def calculate_location_score(nearby_summary):
+
+    # Let's assign weights to each category (importance)
+    weights = {
+        "schools": 1.0,
+        "stations": 1.5,
+        "supermarkets": 0.8,
+        "parks": 0.6,
+        "hospitals": 1.2
+    }
+
+    score = 0
+    max_score = 0
+
+    for key in weights:
+        count = nearby_summary.get(key, 0)
+
+        # Let's cap counts to avoid extreme influence
+        capped_count = min(count, 5)
+
+        score += capped_count * weights[key]
+        max_score += 5 * weights[key]
+
+    # Normalize between 0 and 1
+    if max_score == 0:
+        return 0
+
+    return score / max_score
+
 # Let's create the main prediction route that receives user input
 @app.post("/predict")
 def predict_house(data: HouseInput):
@@ -355,7 +396,6 @@ def predict_house(data: HouseInput):
 
     # Let's get coordinates
     lat, lon = get_coordinates(full_address)
-
 
 
     # Let's get nearby places
@@ -426,17 +466,13 @@ def predict_house(data: HouseInput):
             len(comps)
         )
 
-    # Let's adjust price based on nearby amenities
-    location_bonus = (
-        nearby_summary["schools"] * 5000 +
-        nearby_summary["stations"] * 8000 +
-        nearby_summary["supermarkets"] * 3000 +
-        nearby_summary["parks"] * 2000 +
-        nearby_summary["hospitals"] * 4000
-    )
+    # Let's calculate a location score based on nearby amenities
+    location_score = calculate_location_score(nearby_summary)
 
-    # Let's add the location bonus to the final estimated price
-    final_estimated_price += location_bonus
+    # Let's adjust the price using a multiplier (max ±10%)
+    location_multiplier = 1 + (location_score - 0.5) * 0.2
+
+    final_estimated_price *= location_multiplier
 
     # Let's calculate the price difference
     difference = (data.listing_price - final_estimated_price) / final_estimated_price * 100
@@ -455,7 +491,8 @@ def predict_house(data: HouseInput):
     explanation = generate_explanation(
         difference,
         data.days_on_market,
-        len(comps)
+        len(comps),
+        location_score
     )
 
     return {
@@ -468,4 +505,6 @@ def predict_house(data: HouseInput):
         "zipcode_mode": zipcode_mode,
         "explanation": explanation,
         "nearby_places": nearby_summary,
+        "latitude": lat,
+        "longitude": lon,
     }
