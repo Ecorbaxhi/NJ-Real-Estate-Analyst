@@ -302,17 +302,32 @@ def get_nearby_places(lat, lon):
 
     url = "https://overpass-api.de/api/interpreter"
 
-    query = f"""
-    [out:json];
-    (
-      node(around:1000,{lat},{lon})["amenity"="school"];
-      node(around:1000,{lat},{lon})["amenity"="hospital"];
-      node(around:1000,{lat},{lon})["shop"="supermarket"];
-      node(around:1000,{lat},{lon})["railway"="station"];
-      node(around:1000,{lat},{lon})["leisure"="park"];
-    );
-    out;
-    """
+# Let's search nearby places using nodes, ways, and relations
+query = f"""
+[out:json][timeout:25];
+(
+  node(around:1000,{lat},{lon})["amenity"="school"];
+  way(around:1000,{lat},{lon})["amenity"="school"];
+  relation(around:1000,{lat},{lon})["amenity"="school"];
+
+  node(around:1000,{lat},{lon})["amenity"="hospital"];
+  way(around:1000,{lat},{lon})["amenity"="hospital"];
+  relation(around:1000,{lat},{lon})["amenity"="hospital"];
+
+  node(around:1000,{lat},{lon})["shop"="supermarket"];
+  way(around:1000,{lat},{lon})["shop"="supermarket"];
+  relation(around:1000,{lat},{lon})["shop"="supermarket"];
+
+  node(around:1000,{lat},{lon})["railway"="station"];
+  way(around:1000,{lat},{lon})["railway"="station"];
+  relation(around:1000,{lat},{lon})["railway"="station"];
+
+  node(around:1000,{lat},{lon})["leisure"="park"];
+  way(around:1000,{lat},{lon})["leisure"="park"];
+  relation(around:1000,{lat},{lon})["leisure"="park"];
+);
+out center;
+"""
 
     headers = {
         "User-Agent": "NJ-Real-Estate-Analyst/1.0"
@@ -508,3 +523,4 @@ def predict_house(data: HouseInput):
         "latitude": lat,
         "longitude": lon,
     }
+
