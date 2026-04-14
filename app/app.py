@@ -538,13 +538,3 @@ def predict_house(data: HouseInput):
         "explanation": explanation,
         "nearby_places": nearby_summary,
 
-        # Let's return the raw Overpass response for debugging
-        "nearby_raw_data": nearby_places,
-
-        # Let's return how many raw places Overpass found before summarizing
-        "raw_places_found": len(nearby_places["elements"]) if nearby_places and "elements" in nearby_places else 0,
-
-        "latitude": lat,
-        "longitude": lon,
-    }
-
