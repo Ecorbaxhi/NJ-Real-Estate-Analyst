@@ -297,13 +297,14 @@ def get_coordinates(address):
         return None, None
 
 
-# Let's find nearby places using OpenStreetMap (Overpass API)
+# Let's try a backup Overpass server if the first one fails
 def get_nearby_places(lat, lon):
 
-    # Let's use a more reliable Overpass server
-    url = "https://overpass.kumi.systems/api/interpreter"
+    urls = [
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter"
+    ]
 
-    # Let's search nearby places using nodes, ways, and relations
     query = f"""
     [out:json][timeout:25];
     (
@@ -334,14 +335,15 @@ def get_nearby_places(lat, lon):
         "User-Agent": "NJ-Real-Estate-Analyst/1.0"
     }
 
-    try:
-        # Let's increase timeout and avoid silent failures
-        response = requests.get(url, params={"data": query}, headers=headers, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-        return data
-    except:
-        return None
+    for url in urls:
+        try:
+            response = requests.get(url, params={"data": query}, headers=headers, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except:
+            continue
+
+    return None
 
 
 # Let's count nearby places by category
