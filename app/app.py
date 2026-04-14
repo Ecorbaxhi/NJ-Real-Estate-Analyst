@@ -335,7 +335,9 @@ def get_nearby_places(lat, lon):
     }
 
     try:
-        response = requests.get(url, params={"data": query}, headers=headers, timeout=15)
+        # Let's increase timeout and avoid silent failures
+        response = requests.get(url, params={"data": query}, headers=headers, timeout=30)
+        response.raise_for_status()
         data = response.json()
         return data
     except:
