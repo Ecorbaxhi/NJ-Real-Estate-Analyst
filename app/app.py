@@ -523,7 +523,8 @@ def predict_house(data: HouseInput):
         difference,
         data.days_on_market,
         len(comps),
-        location_score
+        location_score,
+        nearby_summary
     )
 
     return {
