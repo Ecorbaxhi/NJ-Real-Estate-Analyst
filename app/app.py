@@ -232,8 +232,8 @@ rf_model_no_zip.fit(X_train_no_zip, y_train_no_zip)
 def home():
     return {"message": "NJ Real Estate Analyst API is running"}
 
-# Let's generate a human explanation for the result including location quality
-def generate_explanation(price_diff_pct, days_on_market, comps_count, location_score):
+# Let's generate a human explanation including specific nearby amenities
+def generate_explanation(price_diff_pct, days_on_market, comps_count, location_score, nearby_summary):
 
     explanation = ""
 
@@ -251,13 +251,24 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count, location_s
     elif days_on_market > 30:
         explanation += "It has been on the market for a moderate period. "
 
-    # Location logic (NEW)
-    if location_score > 0.7:
-        explanation += "The location is very strong, with many nearby amenities such as schools, parks, and transport. "
-    elif location_score > 0.4:
-        explanation += "The location is average, with some nearby amenities. "
+    # Location details (NEW — specific info)
+    amenities = []
+
+    if nearby_summary.get("schools", 0) > 3:
+        amenities.append("many schools nearby")
+    if nearby_summary.get("stations", 0) > 0:
+        amenities.append("access to public transport")
+    if nearby_summary.get("supermarkets", 0) > 0:
+        amenities.append("nearby supermarkets")
+    if nearby_summary.get("parks", 0) > 0:
+        amenities.append("nearby parks")
+    if nearby_summary.get("hospitals", 0) > 0:
+        amenities.append("nearby hospitals")
+
+    if amenities:
+        explanation += "The location is strong, with " + ", ".join(amenities) + ". "
     else:
-        explanation += "The location has limited nearby amenities, which may affect the value. "
+        explanation += "The location has limited nearby amenities. "
 
     # Reliability
     if comps_count < 5:
