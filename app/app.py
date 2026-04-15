@@ -270,10 +270,6 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count, location_s
     else:
         explanation += "The location has limited nearby amenities. "
 
-    # Reliability
-    if comps_count < 5:
-        explanation += "However, few comparable properties were found, so the estimate may be less reliable."
-
     return explanation.strip()
 
 
