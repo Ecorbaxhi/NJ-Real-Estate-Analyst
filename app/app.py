@@ -549,4 +549,7 @@ def predict_house(data: HouseInput):
         "zipcode_mode": zipcode_mode,
         "explanation": explanation,
         "nearby_places": nearby_summary,
+        # Let's return the coordinates so we can show the property on the map
+        "latitude": lat,
+        "longitude": lon,
     }
