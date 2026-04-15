@@ -270,8 +270,25 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count, location_s
     else:
         explanation += "The location has limited nearby amenities. "
 
-    return explanation.strip()
 
+    # Let's add detailed nearby amenities list at the end
+    details = []
+
+    if nearby_summary.get("schools", 0) > 0:
+        details.append(f"Schools: {nearby_summary['schools']}")
+    if nearby_summary.get("stations", 0) > 0:
+        details.append(f"Train stations: {nearby_summary['stations']}")
+    if nearby_summary.get("supermarkets", 0) > 0:
+        details.append(f"Supermarkets: {nearby_summary['supermarkets']}")
+    if nearby_summary.get("parks", 0) > 0:
+        details.append(f"Parks: {nearby_summary['parks']}")
+    if nearby_summary.get("hospitals", 0) > 0:
+        details.append(f"Hospitals: {nearby_summary['hospitals']}")
+
+    if details:
+        explanation += " Nearby highlights → " + ", ".join(details) + "."
+
+    return explanation.strip()
 
 # Let's convert address into latitude and longitude using OpenStreetMap
 import requests
