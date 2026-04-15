@@ -78,6 +78,11 @@
         .green { background: #2ecc71; }
         .orange { background: #f39c12; }
     </style>
+
+    <!-- Let's include Leaflet map library -->
+   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 </head>
 
 <body>
@@ -124,6 +129,8 @@
 
     <div id="result" class="result">Results will appear here.</div>
 
+    <div id="map" style="height: 250px; margin-top: 20px; border-radius: 10px; overflow: hidden;"></div>
+
     <p style="font-size: 12px; color: gray; margin-top: 20px;">
     Disclaimer: This estimate is based on a general analysis of multiple factors and should be used as an indicative value. Actual market prices may vary.
     </p>
@@ -159,6 +166,23 @@ document.getElementById("houseForm").addEventListener("submit", async function(e
         });
 
         const result = await response.json();
+
+        // Let's display a simple map if coordinates are available
+        if (result.latitude && result.longitude) {
+
+            // Clear previous map if exists
+            document.getElementById("map").innerHTML = "";
+
+            const map = L.map('map').setView([result.latitude, result.longitude], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            L.marker([result.latitude, result.longitude]).addTo(map)
+                .bindPopup(data.address || "Property Location")
+                .openPopup();
+        }
 
         // Dynamic colors
         let statusColor = result.price_status === "Overpriced" ? "red" :
