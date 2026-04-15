@@ -549,8 +549,4 @@ def predict_house(data: HouseInput):
         "zipcode_mode": zipcode_mode,
         "explanation": explanation,
         "nearby_places": nearby_summary,
-
-        # temporary debug
-        "latitude": lat,
-        "longitude": lon,
     }
