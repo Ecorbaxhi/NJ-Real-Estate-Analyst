@@ -533,7 +533,6 @@ def predict_house(data: HouseInput):
         "price_difference_percent": round(difference, 2),
         "price_status": price_status,
         "price_drop_risk": price_drop_risk,
-        "comparable_houses_found": int(len(comps)),
         "zipcode_mode": zipcode_mode,
         "explanation": explanation,
         "nearby_places": nearby_summary,
