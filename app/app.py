@@ -572,4 +572,4 @@ def predict_house(data: HouseInput):
         }
 
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
