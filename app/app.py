@@ -16,6 +16,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 
+# Let's return the real backend error for debugging
+from fastapi import HTTPException
+
+
 # Let's create the FastAPI app
 app = FastAPI(title="NJ Real Estate Analyst API")
 
@@ -233,7 +237,7 @@ def home():
     return {"message": "NJ Real Estate Analyst API is running"}
 
 # Let's generate a human explanation including specific nearby amenities
-def generate_explanation(price_diff_pct, days_on_market, comps_count, location_score, nearby_summary):
+def generate_explanation(price_diff_pct, days_on_market, comps_count, location_score, nearby_summary, missing_fields):
 
     explanation = ""
 
@@ -287,6 +291,10 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count, location_s
 
     if details:
         explanation += " Nearby highlights → " + ", ".join(details) + "."
+
+    # Let's warn if some inputs were missing
+    if missing_fields:
+        explanation += " Some inputs were missing (" + ", ".join(missing_fields) + "), so the estimate may be less precise."
 
     return explanation.strip()
 
@@ -434,133 +442,134 @@ def calculate_location_score(nearby_summary):
 # Let's create the main prediction route that receives user input
 @app.post("/predict")
 def predict_house(data: HouseInput):
+    try:
+        # Let's build a more complete address for better geocoding
+        full_address = f"{data.address}, {data.zipcode}, USA"
 
-    # Let's build a more complete address for better geocoding
-    full_address = f"{data.address}, {data.zipcode}, USA"
+        # Let's get coordinates
+        lat, lon = get_coordinates(full_address)
 
-    # Let's get coordinates
-    lat, lon = get_coordinates(full_address)
+        # Let's get nearby places
+        nearby_places = get_nearby_places(lat, lon) if lat and lon else None
+        nearby_summary = summarize_nearby_places(nearby_places)
 
+        # Let's choose the right model depending on whether the zipcode is known
+        if data.zipcode in valid_zipcodes:
 
-    # Let's get nearby places
-    nearby_places = get_nearby_places(lat, lon) if lat and lon else None
-    nearby_summary = summarize_nearby_places(nearby_places)
+            # Convert zipcode to int for the model
+            zipcode_int = int(data.zipcode)
 
-    # Let's choose the right model depending on whether the zipcode is known
-    if data.zipcode in valid_zipcodes:
+            # Let's build the input using zipcode
+            house_example = pd.DataFrame({
+                "bedrooms": [data.bedrooms],
+                "bathrooms": [data.bathrooms],
+                "sqft_living": [data.sqft_living],
+                "floors": [data.floors],
+                "yr_built": [data.yr_built],
+                "zipcode": [zipcode_int]
+            })
 
-        # Convert zipcode to int for the model
-        zipcode_int = int(data.zipcode)
+            # Let's predict using the models trained with zipcode
+            lr_price = estimate_price(model_zip, house_example)
+            rf_price = estimate_price(rf_model_zip, house_example)
 
-        # Let's build the input using zipcode
-        house_example = pd.DataFrame({
-            "bedrooms": [data.bedrooms],
-            "bathrooms": [data.bathrooms],
-            "sqft_living": [data.sqft_living],
-            "floors": [data.floors],
-            "yr_built": [data.yr_built],
-            "zipcode": [zipcode_int]
-        })
+            # Let's keep track of which mode was used
+            zipcode_mode = "known_zipcode"
 
-        # Let's predict using the models trained with zipcode
-        lr_price = estimate_price(model_zip, house_example)
-        rf_price = estimate_price(rf_model_zip, house_example)
+            # Let's find comparable houses
+            comps = find_comparables(df, house_example)
 
-        # Let's keep track of which mode was used
-        zipcode_mode = "known_zipcode"
+        else:
 
-        # Let's find comparable houses
-        comps = find_comparables(df, house_example)
+            # Let's build the input without zipcode
+            house_example = pd.DataFrame({
+                "bedrooms": [data.bedrooms],
+                "bathrooms": [data.bathrooms],
+                "sqft_living": [data.sqft_living],
+                "floors": [data.floors],
+                "yr_built": [data.yr_built]
+            })
 
-    else:
+            # Let's predict using the models trained without zipcode
+            lr_price = estimate_price(model_no_zip, house_example)
+            rf_price = estimate_price(rf_model_no_zip, house_example)
 
-        # Let's build the input without zipcode
-        house_example = pd.DataFrame({
-            "bedrooms": [data.bedrooms],
-            "bathrooms": [data.bathrooms],
-            "sqft_living": [data.sqft_living],
-            "floors": [data.floors],
-            "yr_built": [data.yr_built]
-        })
+            # Let's keep track of which mode was used
+            zipcode_mode = "unknown_zipcode_used_general_model"
 
-        # Let's predict using the models trained without zipcode
-        lr_price = estimate_price(model_no_zip, house_example)
-        rf_price = estimate_price(rf_model_no_zip, house_example)
+            # Let's skip comparables when zipcode is unknown
+            comps = pd.DataFrame()
 
-        # Let's keep track of which mode was used
-        zipcode_mode = "unknown_zipcode_used_general_model"
+        # Let's give more importance to Random Forest
+        predicted_price = (0.2 * lr_price) + (0.8 * rf_price)
 
-        # Let's skip comparables when zipcode is unknown
-        comps = pd.DataFrame()
+        # Let's estimate price from comparables
+        estimated_price_comps = estimate_price_from_comps(comps, house_example)
 
+        # Let's combine both approaches
+        if estimated_price_comps is None:
+            final_estimated_price = predicted_price
+        else:
+            final_estimated_price = combine_prices(
+                predicted_price,
+                estimated_price_comps,
+                len(comps)
+            )
 
-    # Let's give more importance to Random Forest
-    predicted_price = (0.2 * lr_price) + (0.8 * rf_price)
+        # Let's calculate a location score based on nearby amenities
+        location_score = calculate_location_score(nearby_summary)
 
-    # Let's estimate price from comparables
-    estimated_price_comps = estimate_price_from_comps(comps, house_example)
+        # Let's adjust the price using a multiplier (max ±10%)
+        location_multiplier = 1 + (location_score - 0.5) * 0.2
 
-    # Let's combine both approaches
-    if estimated_price_comps is None:
-        final_estimated_price = predicted_price
-    else:
-        final_estimated_price = combine_prices(
-            predicted_price,
-            estimated_price_comps,
-            len(comps)
+        final_estimated_price *= location_multiplier
+
+        # Let's calculate the price difference
+        difference = (data.listing_price - final_estimated_price) / final_estimated_price * 100
+
+        # Let's determine price status
+        if difference > 5:
+            price_status = "Overpriced"
+        elif difference < -5:
+            price_status = "Underpriced"
+        else:
+            price_status = "Fairly priced"
+
+        # Let's check if important inputs are missing
+        missing_fields = []
+
+        if not data.sqft_living:
+            missing_fields.append("square footage")
+        if not data.bathrooms:
+            missing_fields.append("bathrooms")
+        if not data.bedrooms:
+            missing_fields.append("bedrooms")
+
+        # Let's estimate price drop risk
+        price_drop_risk = estimate_price_drop_risk(difference, data.days_on_market)
+
+        explanation = generate_explanation(
+            difference,
+            data.days_on_market,
+            len(comps),
+            location_score,
+            nearby_summary,
+            missing_fields
         )
 
-    # Let's calculate a location score based on nearby amenities
-    location_score = calculate_location_score(nearby_summary)
+        return {
+            "estimated_fair_price": round(final_estimated_price, 2),
+            "listing_price": round(data.listing_price, 2),
+            "price_difference_percent": round(difference, 2),
+            "price_status": price_status,
+            "price_drop_risk": price_drop_risk,
+            "zipcode_mode": zipcode_mode,
+            "explanation": explanation,
+            "nearby_places": nearby_summary,
+            # Let's return the coordinates so we can show the property on the map
+            "latitude": lat,
+            "longitude": lon,
+        }
 
-    # Let's adjust the price using a multiplier (max ±10%)
-    location_multiplier = 1 + (location_score - 0.5) * 0.2
-
-    final_estimated_price *= location_multiplier
-
-    # Let's calculate the price difference
-    difference = (data.listing_price - final_estimated_price) / final_estimated_price * 100
-
-    # Let's determine price status
-    if difference > 5:
-        price_status = "Overpriced"
-    elif difference < -5:
-        price_status = "Underpriced"
-    else:
-        price_status = "Fairly priced"
-
-    # Let's check if important inputs are missing
-    missing_fields = []
-
-    if not data.sqft_living:
-        missing_fields.append("square footage")
-    if not data.bathrooms:
-        missing_fields.append("bathrooms")
-    if not data.bedrooms:
-        missing_fields.append("bedrooms")
-
-    # Let's estimate price drop risk
-    price_drop_risk = estimate_price_drop_risk(difference, data.days_on_market)
-
-    explanation = generate_explanation(
-         difference,
-        data.days_on_market,
-        len(comps),
-        location_score,
-        nearby_summary,
-        missing_fields
-    )
-
-    return {
-        "estimated_fair_price": round(final_estimated_price, 2),
-        "listing_price": round(data.listing_price, 2),
-        "price_difference_percent": round(difference, 2),
-        "price_status": price_status,
-        "price_drop_risk": price_drop_risk,
-        "zipcode_mode": zipcode_mode,
-        "explanation": explanation,
-        "nearby_places": nearby_summary,
-        # Let's return the coordinates so we can show the property on the map
-        "latitude": lat,
-        "longitude": lon,
-    }
+    except Exception as e:
+        return {"error": str(e)}
