@@ -144,6 +144,10 @@
             bedrooms: document.getElementById("bedrooms").value ? parseInt(document.getElementById("bedrooms").value) : 3,
             bathrooms: document.getElementById("bathrooms").value ? parseFloat(document.getElementById("bathrooms").value) : 2,
             sqft_living: document.getElementById("sqft_living").value ? parseInt(document.getElementById("sqft_living").value) : 1500,
+
+            //  New field to indicate if sqft is missing, which can be useful for the model to know
+            missing_sqft: document.getElementById("sqft_living").value === "",
+
             floors: document.getElementById("floors").value ? parseFloat(document.getElementById("floors").value) : 1,
             yr_built: document.getElementById("yr_built").value ? parseInt(document.getElementById("yr_built").value) : 2000,
             address: document.getElementById("address").value,

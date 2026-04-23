@@ -538,12 +538,14 @@ def predict_house(data: HouseInput):
         # Let's check if important inputs are missing
         missing_fields = []
 
-        if not data.sqft_living:
-            missing_fields.append("square footage")
-        if not data.bathrooms:
-            missing_fields.append("bathrooms")
-        if not data.bedrooms:
+        if hasattr(data, "missing_bedrooms") and data.missing_bedrooms:
             missing_fields.append("bedrooms")
+
+        if hasattr(data, "missing_bathrooms") and data.missing_bathrooms:
+            missing_fields.append("bathrooms")
+
+        if hasattr(data, "missing_sqft") and data.missing_sqft:
+            missing_fields.append("square footage")
 
         # Let's estimate price drop risk
         price_drop_risk = estimate_price_drop_risk(difference, data.days_on_market)
