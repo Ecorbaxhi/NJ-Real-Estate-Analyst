@@ -78,14 +78,26 @@ def estimate_price_from_comps(comps, house):
     return estimated_price_comps
 
 
-# Let's combine model price and comps price in a smarter way
 def combine_prices(predicted_price, estimated_price_comps, comps_count):
+
+    # If no comparables → fallback to model
+    if estimated_price_comps is None:
+        return predicted_price
+
+    # Let's compute difference between comps and model
+    diff_pct = abs(estimated_price_comps - predicted_price) / predicted_price
+
+    # If comps are too far from model → trust model more
+    if diff_pct > 0.30:
+        return (0.85 * predicted_price) + (0.15 * estimated_price_comps)
+
+    # Normal blending depending on comps count
     if comps_count >= 20:
-        return (0.3 * predicted_price) + (0.7 * estimated_price_comps)
+        return (0.4 * predicted_price) + (0.6 * estimated_price_comps)
     elif comps_count >= 10:
-        return (0.5 * predicted_price) + (0.5 * estimated_price_comps)
+        return (0.6 * predicted_price) + (0.4 * estimated_price_comps)
     else:
-        return (0.7 * predicted_price) + (0.3 * estimated_price_comps)
+        return (0.8 * predicted_price) + (0.2 * estimated_price_comps)
 
 
 # Let's estimate price drop risk using BOTH days on market and overpricing
