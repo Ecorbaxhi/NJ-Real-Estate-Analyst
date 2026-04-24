@@ -43,6 +43,11 @@ class HouseInput(BaseModel):
     listing_price: float
     days_on_market: int
 
+    # Let's track if optional inputs were left empty by the user
+    missing_bedrooms: bool = False
+    missing_bathrooms: bool = False
+    missing_sqft: bool = False
+
 
 # Let's create a function to estimate fair price using the model
 def estimate_price(model, house):
