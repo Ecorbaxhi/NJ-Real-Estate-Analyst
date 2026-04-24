@@ -54,17 +54,26 @@ def estimate_price(model, house):
     return model.predict(house)[0]
 
 
-# Let's create a function to estimate price from comparable houses
+# Let's estimate price from comparable houses using similarity weights
 def estimate_price_from_comps(comps, house):
-    
+
     # Let's make sure we have comparable houses
     if len(comps) == 0:
         return None
 
     comps = comps.copy()
+
+    # Let's calculate price per square foot for each comparable house
     comps["price_per_sqft"] = comps["price"] / comps["sqft_living"]
-    avg_price_sqft = comps["price_per_sqft"].mean()
-    estimated_price_comps = avg_price_sqft * house["sqft_living"].values[0]
+
+    # Let's give more weight to houses that are more similar
+    if "distance" in comps.columns:
+        comps["weight"] = 1 / (comps["distance"] + 1)
+        weighted_price_sqft = (comps["price_per_sqft"] * comps["weight"]).sum() / comps["weight"].sum()
+    else:
+        weighted_price_sqft = comps["price_per_sqft"].mean()
+
+    estimated_price_comps = weighted_price_sqft * house["sqft_living"].values[0]
 
     return estimated_price_comps
 
