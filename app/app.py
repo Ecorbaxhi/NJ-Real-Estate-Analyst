@@ -594,9 +594,20 @@ def predict_house(data: HouseInput):
             "zipcode_mode": zipcode_mode,
             "explanation": explanation,
             "nearby_places": nearby_summary,
+
             # Let's return the coordinates so we can show the property on the map
             "latitude": lat,
             "longitude": lon,
+
+            # Let's add debug information to understand what is happening
+            "debug": {
+                "lr_price": lr_price,
+                "rf_price": rf_price,
+                "predicted_price": predicted_price,
+                "comps_price": estimated_price_comps,
+                "final_price": final_estimated_price,
+                "comps_count": len(comps)
+            }
         }
 
     except Exception as e:
