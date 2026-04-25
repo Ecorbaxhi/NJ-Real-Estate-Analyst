@@ -262,65 +262,57 @@ rf_model_no_zip.fit(X_train_no_zip, y_train_no_zip)
 def home():
     return {"message": "NJ Real Estate Analyst API is running"}
 
-# Let's generate a human explanation including specific nearby amenities
+# Let's generate a more detailed and realistic explanation
 def generate_explanation(price_diff_pct, days_on_market, comps_count, location_score, nearby_summary, missing_fields):
 
     explanation = ""
 
-    # Price logic
+    # Price comparison
     if price_diff_pct > 10:
-        explanation += "The property is significantly overpriced compared to similar homes. "
+        explanation += "The property appears significantly overpriced compared to its estimated fair value. "
     elif price_diff_pct > 0:
-        explanation += "The property is slightly overpriced compared to similar homes. "
+        explanation += "The property appears slightly overpriced compared to its estimated fair value. "
     else:
-        explanation += "The property is priced below market value. "
+        explanation += "The property appears to be priced below market value. "
 
-    # Time on market
+    # Market behavior (days on market)
     if days_on_market > 60:
-        explanation += "It has been on the market for a long time, increasing the likelihood of a price drop. "
+        explanation += "It has been on the market for a long time, increasing the likelihood of a price reduction. "
     elif days_on_market > 30:
-        explanation += "It has been on the market for a moderate period. "
+        explanation += "It has been on the market for a moderate period, which may influence pricing adjustments. "
 
-    # Location details (NEW — specific info)
+    # Comparable houses insight
+    if comps_count > 0:
+        explanation += f"The estimate is supported by {comps_count} comparable homes in the area. "
+    else:
+        explanation += "Limited comparable homes were found, so the estimate relies more on the predictive model. "
+
+    # Location insight
+    if location_score > 0.6:
+        explanation += "The location is strong and adds value due to nearby amenities. "
+    elif location_score < 0.4:
+        explanation += "The location has limited nearby amenities, which may reduce value. "
+
+    # Nearby amenities (clear and natural wording)
     amenities = []
 
-    if nearby_summary.get("schools", 0) > 3:
-        amenities.append("many schools nearby")
+    if nearby_summary.get("schools", 0) > 0:
+        amenities.append(f"{nearby_summary['schools']} schools")
     if nearby_summary.get("stations", 0) > 0:
-        amenities.append("access to public transport")
+        amenities.append(f"{nearby_summary['stations']} transport options")
     if nearby_summary.get("supermarkets", 0) > 0:
-        amenities.append("nearby supermarkets")
+        amenities.append(f"{nearby_summary['supermarkets']} supermarkets")
     if nearby_summary.get("parks", 0) > 0:
-        amenities.append("nearby parks")
+        amenities.append(f"{nearby_summary['parks']} parks")
     if nearby_summary.get("hospitals", 0) > 0:
-        amenities.append("nearby hospitals")
+        amenities.append(f"{nearby_summary['hospitals']} hospitals")
 
     if amenities:
-        explanation += "The location is strong, with " + ", ".join(amenities) + ". "
-    else:
-        explanation += "The location has limited nearby amenities. "
+        explanation += "Nearby amenities include: " + ", ".join(amenities) + ". "
 
-
-    # Let's add detailed nearby amenities list at the end
-    details = []
-
-    if nearby_summary.get("schools", 0) > 0:
-        details.append(f"Schools: {nearby_summary['schools']}")
-    if nearby_summary.get("stations", 0) > 0:
-        details.append(f"Train stations: {nearby_summary['stations']}")
-    if nearby_summary.get("supermarkets", 0) > 0:
-        details.append(f"Supermarkets: {nearby_summary['supermarkets']}")
-    if nearby_summary.get("parks", 0) > 0:
-        details.append(f"Parks: {nearby_summary['parks']}")
-    if nearby_summary.get("hospitals", 0) > 0:
-        details.append(f"Hospitals: {nearby_summary['hospitals']}")
-
-    if details:
-        explanation += " Nearby highlights → " + ", ".join(details) + "."
-
-    # Let's warn if some inputs were missing
+    # Missing inputs warning
     if missing_fields:
-        explanation += " Some inputs were missing (" + ", ".join(missing_fields) + "), so the estimate may be less precise."
+        explanation += "Some inputs were missing (" + ", ".join(missing_fields) + "), so the estimate may be less precise. "
 
     return explanation.strip()
 
