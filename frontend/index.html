@@ -142,7 +142,13 @@ body {
     <main class="dashboard">
 
         <section class="panel form-panel">
+
+            <h3 class="form-title">
+                Enter property details for an accurate evaluation
+            </h3>
+
             <form id="houseForm">
+
                 <label for="bedrooms">Bedrooms</label>
                 <input type="number" id="bedrooms" placeholder="e.g. 3">
 
@@ -160,7 +166,7 @@ body {
 
                 <label for="address">Street Address</label>
                 <input type="text" id="address" placeholder="e.g. 123 Main St" required>
-git add .
+
                 <label for="zipcode">Zipcode</label>
                 <input type="text" id="zipcode" placeholder="e.g. 07071" required>
 
@@ -171,10 +177,13 @@ git add .
                 <input type="number" id="days_on_market" placeholder="e.g. 12" required>
 
                 <button type="submit">Estimate Price</button>
+
             </form>
+
         </section>
 
         <section class="panel analysis-panel">
+
             <div id="result" class="result">Results will appear here.</div>
 
             <div id="map" class="map-box"></div>
