@@ -290,8 +290,10 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count, location_s
     # Location insight
     if location_score > 0.6:
         explanation += "The location is strong and adds value due to nearby amenities. "
-    elif location_score < 0.4:
+    elif location_score < 0.3:
         explanation += "The location has limited nearby amenities, which may reduce value. "
+    else:
+        explanation += "The location is average in terms of nearby amenities. "
 
     # Nearby amenities (clear and natural wording)
     amenities = []
