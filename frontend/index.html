@@ -6,78 +6,121 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Real Estate Advisor</title>
 
-    <style>
-        /* Let's make the page cleaner and more modern */
-        body {
-            font-family: Arial;
-            background-color: #eef3f8;
-            text-align: center;
-        }
+<style>
 
-        .container {
-            background: white;
-            padding: 30px;
-            margin: 50px auto;
-            width: 430px;
-            border-radius: 14px;
-            box-shadow: 0px 6px 18px rgba(0,0,0,0.12);
-        }
+body {
+    font-family: Arial;
+    background-color: #dbe9f6; /* more blue */
+    margin: 0;
+}
 
-        h1 {
-            margin-bottom: 20px;
-            color: #1f4e79;
-        }
+/* Top header */
+.page-header {
+    text-align: center;
+    padding: 30px 20px 10px 20px;
+}
 
-        label {
-            display: block;
-            text-align: left;
-            width: 90%;
-            margin: 10px auto 0 auto;
-            font-weight: bold;
-        }
+.page-header h1 {
+    color: #1f4e79;
+    margin-bottom: 10px;
+}
 
-        input {
-            width: 90%;
-            padding: 10px;
-            margin: 8px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
+.page-header p {
+    max-width: 900px;
+    margin: 0 auto;
+    color: #333;
+}
 
-        button {
-            width: 95%;
-            padding: 12px;
-            background: black;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+/* Main layout */
+.dashboard {
+    display: flex;
+    justify-content: space-between;
+    padding: 30px;
+    gap: 20px;
+}
 
-        button:hover {
-            background: #333;
-        }
+/* Each column */
+.panel {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 6px 18px rgba(0,0,0,0.1);
+    width: 33%;
+}
 
-        .result {
-            margin-top: 25px;
-            text-align: left;
-            background: #f8fbff;
-            border-left: 5px solid #1f4e79;
-            padding: 18px;
-            border-radius: 10px;
-        }
+/* Form */
+.form-panel input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+}
 
-        .badge {
-            padding: 5px 10px;
-            border-radius: 5px;
-            color: white;
-            display: inline-block;
-        }
+.form-panel label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+}
 
-        .red { background: #e74c3c; }
-        .green { background: #2ecc71; }
-        .orange { background: #f39c12; }
-    </style>
+.form-panel button {
+    width: 100%;
+    padding: 12px;
+    background: black;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+/* Result box */
+.result {
+    background: #f4f9ff;
+    border-left: 5px solid #1f4e79;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+/* Map */
+.map-box {
+    height: 250px;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+/* AI panel */
+.ai-panel {
+    text-align: center;
+}
+
+.ai-panel h2 {
+    color: #1f4e79;
+}
+
+.ai-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.ai-button {
+    width: 100%;
+    padding: 12px;
+    background: #1f4e79;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    margin-top: 15px;
+    cursor: pointer;
+}
+
+/* Disclaimer */
+.disclaimer {
+    font-size: 12px;
+    color: gray;
+}
+
+</style>
 
     <!-- Let's include Leaflet map library -->
    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -117,7 +160,7 @@
 
                 <label for="address">Street Address</label>
                 <input type="text" id="address" placeholder="e.g. 123 Main St" required>
-
+git add .
                 <label for="zipcode">Zipcode</label>
                 <input type="text" id="zipcode" placeholder="e.g. 07071" required>
 
