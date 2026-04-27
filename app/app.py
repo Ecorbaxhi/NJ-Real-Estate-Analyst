@@ -520,8 +520,13 @@ def predict_house(data: HouseInput):
             # Let's skip comparables when zipcode is unknown
             comps = pd.DataFrame()
 
-        # Let's give more importance to Random Forest
-        predicted_price = (0.2 * lr_price) + (0.8 * rf_price)
+        # Let's stabilize the model prediction by checking if Random Forest is too far from Linear Regression
+        model_difference = abs(rf_price - lr_price) / lr_price
+
+        if model_difference > 0.30:
+            predicted_price = (0.5 * lr_price) + (0.5 * rf_price)
+        else:
+            predicted_price = (0.2 * lr_price) + (0.8 * rf_price)
 
         # Let's estimate price from comparables
         estimated_price_comps = estimate_price_from_comps(comps, house_example)
