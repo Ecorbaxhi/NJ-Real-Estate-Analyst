@@ -250,10 +250,12 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count, location_s
         explanation += "It has been on the market for a moderate period, which may influence pricing adjustments. "
 
     # Comparable houses insight
-    if comps_count > 0:
-        explanation += f"The estimate is supported by {comps_count} comparable homes in the area. "
+    if comps_count < 5:
+        explanation += "Very few comparable properties were found, so the estimate may be less precise. "
+    elif comps_count < 10:
+        explanation += f"The estimate is based on a limited number of comparable homes ({comps_count}), which may affect accuracy. "
     else:
-        explanation += "Limited comparable homes were found, so the estimate relies more on the predictive model. "
+        explanation += f"The estimate is supported by a solid number of comparable homes ({comps_count}), increasing its reliability. "
 
     # Location insight
     if location_score > 0.6:
