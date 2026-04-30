@@ -270,9 +270,13 @@
                 Chat with our AI agent for a deeper analysis of the property, including pricing, location, risks, nearby amenities, and market context.
             </p>
 
-            <button type="button" class="ai-button">
+            <button type="button" class="ai-button" id="aiButton">
                 Chat with AI Agent
             </button>
+
+            <div id="aiResult" class="ai-result">
+                AI analysis will appear here.
+            </div>
         </section>
 
     </main>
@@ -283,6 +287,9 @@
     </p>
 
 <script>
+
+        let latestResult = null;
+
     document.getElementById("houseForm").addEventListener("submit", async function(event) {
         event.preventDefault();
 
@@ -317,6 +324,11 @@
         });
 
         const result = await response.json();
+        
+                latestResult = {
+            ...result,
+            days_on_market: data.days_on_market
+        };
 
         // Let's display a simple map if coordinates are available
         if (result.latitude && result.longitude) {
@@ -368,6 +380,35 @@
         resultDiv.innerHTML = "Error connecting to backend.";
     }
 });
+
+
+    document.getElementById("aiButton").addEventListener("click", async function() {
+        const aiResultDiv = document.getElementById("aiResult");
+
+        if (!latestResult) {
+            aiResultDiv.innerHTML = "Please estimate a property first.";
+            return;
+        }
+
+        aiResultDiv.innerHTML = "Generating AI analysis...";
+
+        try {
+            const response = await fetch("https://nj-real-estate-analyst.onrender.com/ai-analysis", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(latestResult)
+            });
+
+            const aiData = await response.json();
+
+            aiResultDiv.innerHTML = aiData.ai_analysis;
+        } catch (error) {
+            aiResultDiv.innerHTML = "AI analysis is currently unavailable.";
+        }
+    });
+
 </script>
 
 </body>

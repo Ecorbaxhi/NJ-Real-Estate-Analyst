@@ -19,6 +19,8 @@ from sklearn.ensemble import RandomForestRegressor
 # Let's return the real backend error for debugging
 from fastapi import HTTPException
 
+import os
+import requests
 
 # Let's create the FastAPI app
 app = FastAPI(title="NJ Real Estate Analyst API")
@@ -288,8 +290,52 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count, location_s
 
     return explanation.strip()
 
-# Let's convert address into latitude and longitude using OpenStreetMap
-import requests
+def generate_ai_analysis(data):
+
+    api_key = os.getenv("GEMINI_API_KEY")
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+
+    prompt = f"""
+    You are a real estate advisor.
+
+    Property details:
+    - Estimated market value: {data['estimated_fair_price']}
+    - Listing price: {data['listing_price']}
+    - Price difference: {data['price_difference_percent']}%
+    - Days on market: {data['days_on_market']}
+    - Price status: {data['price_status']}
+    - Comparable properties: {data['debug']['comps_count']}
+
+    Provide a short professional analysis:
+    1. Is the property overpriced or underpriced
+    2. Likelihood of price drop
+    3. Suggested offer range
+    Keep it concise and professional.
+    """
+
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
+        ]
+    }
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    result = response.json()
+
+    try:
+        return result["candidates"][0]["content"]["parts"][0]["text"]
+    except:
+        return "AI analysis is currently unavailable."
 
 # Let's convert address into latitude and longitude using OpenStreetMap
 def get_coordinates(address):
@@ -579,5 +625,10 @@ def predict_house(data: HouseInput):
             }
         }
 
+@app.post("/ai-analysis")
+def ai_analysis(data: dict):
+    try:
+        result = generate_ai_analysis(data)
+        return {"ai_analysis": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
