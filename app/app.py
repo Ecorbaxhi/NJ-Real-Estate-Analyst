@@ -624,6 +624,8 @@ def predict_house(data: HouseInput):
                 "comps_count": len(comps)
             }
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/ai-analysis")
 def ai_analysis(data: dict):
