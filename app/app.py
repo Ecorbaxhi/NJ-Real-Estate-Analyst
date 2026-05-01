@@ -334,8 +334,8 @@ def generate_ai_analysis(data):
 
     try:
         return result["candidates"][0]["content"]["parts"][0]["text"]
-    except:
-        return "AI analysis is currently unavailable."
+    except Exception:
+        return str(result)
 
 # Let's convert address into latitude and longitude using OpenStreetMap
 def get_coordinates(address):
