@@ -292,50 +292,50 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count, location_s
 
 def generate_ai_analysis(data):
 
-    api_key = os.getenv("GEMINI_API_KEY")
+def generate_ai_analysis(data):
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+    api_key = os.getenv("OPENAI_API_KEY")
+
+    url = "https://api.openai.com/v1/chat/completions"
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
 
     prompt = f"""
     You are a real estate advisor.
 
     Property details:
-    - Estimated market value: {data['estimated_fair_price']}
+    - Estimated value: {data['estimated_fair_price']}
     - Listing price: {data['listing_price']}
-    - Price difference: {data['price_difference_percent']}%
+    - Difference: {data['price_difference_percent']}%
     - Days on market: {data['days_on_market']}
-    - Price status: {data['price_status']}
-    - Comparable properties: {data['debug']['comps_count']}
+    - Status: {data['price_status']}
+    - Comparable homes: {data['debug']['comps_count']}
 
-    Provide a short professional analysis:
-    1. Is the property overpriced or underpriced
-    2. Likelihood of price drop
-    3. Suggested offer range
-    Keep it concise and professional.
+    Provide a short professional analysis including:
+    - Pricing assessment
+    - Likelihood of price drop
+    - Suggested offer range
     """
 
     payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt}
-                ]
-            }
-        ]
-    }
-
-    headers = {
-        "Content-Type": "application/json"
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system", "content": "You are a professional real estate advisor."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7
     }
 
     response = requests.post(url, headers=headers, json=payload)
-
     result = response.json()
 
     try:
-        return result["candidates"][0]["content"]["parts"][0]["text"]
-    except Exception:
-        return str(result)
+        return result["choices"][0]["message"]["content"]
+    except:
+        return "AI analysis is currently unavailable."
 
 # Let's convert address into latitude and longitude using OpenStreetMap
 def get_coordinates(address):
