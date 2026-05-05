@@ -333,16 +333,18 @@
         // Let's display a simple map if coordinates are available
         if (result.latitude && result.longitude) {
 
-            // Clear previous map if exists
-            document.getElementById("map").innerHTML = "";
+            // Let's remove the old map before creating a new one
+            if (window.propertyMap) {
+                window.propertyMap.remove();
+            }
 
-            const map = L.map('map').setView([result.latitude, result.longitude], 13);
+            window.propertyMap = L.map('map').setView([result.latitude, result.longitude], 13);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            }).addTo(window.propertyMap);
 
-            L.marker([result.latitude, result.longitude]).addTo(map)
+            L.marker([result.latitude, result.longitude]).addTo(window.propertyMap)
                 .bindPopup(data.address || "Property Location")
                 .openPopup();
         }
