@@ -290,51 +290,54 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count, location_s
 
     return explanation.strip()
 
+# Let's generate AI analysis using OpenAI
 def generate_ai_analysis(data):
 
-    api_key = os.getenv("OPENAI_API_KEY")
-
-    url = "https://api.openai.com/v1/chat/completions"
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-
-    prompt = f"""
-    You are a real estate advisor.
-
-    Property details:
-    - Estimated value: {data['estimated_fair_price']}
-    - Listing price: {data['listing_price']}
-    - Difference: {data['price_difference_percent']}%
-    - Days on market: {data['days_on_market']}
-    - Status: {data['price_status']}
-    - Comparable homes: {data['debug']['comps_count']}
-
-    Provide a short professional analysis including:
-    - Pricing assessment
-    - Likelihood of price drop
-    - Suggested offer range
-    """
-
-    payload = {
-        "model": "gpt-4o-mini",
-        "messages": [
-            {"role": "system", "content": "You are a professional real estate advisor."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.7
-    }
-
-    response = requests.post(url, headers=headers, json=payload)
-    result = response.json()
-
     try:
-        return result["choices"][0]["message"]["content"]
-    except Exception:
-        return str(result)
+        api_key = os.getenv("OPENAI_API_KEY")
 
+        url = "https://api.openai.com/v1/chat/completions"
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        prompt = f"""
+        You are a professional real estate advisor.
+
+        Analyze this property:
+
+        Estimated price: {data['estimated_fair_price']}
+        Listing price: {data['listing_price']}
+        Difference: {data['price_difference_percent']}%
+        Days on market: {data['days_on_market']}
+        Status: {data['price_status']}
+        Price drop risk: {data['price_drop_risk']}
+
+        Provide:
+        1. Pricing insight
+        2. Risk explanation
+        3. Suggested offer range
+        """
+
+        payload = {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {"role": "system", "content": "You are a professional real estate advisor."},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.7
+        }
+
+        response = requests.post(url, headers=headers, json=payload)
+        result = response.json()
+
+        return result["choices"][0]["message"]["content"]
+
+    except Exception:
+        return "AI analysis is temporarily unavailable."
+    
 # Let's convert address into latitude and longitude using OpenStreetMap
 def get_coordinates(address):
     url = "https://nominatim.openstreetmap.org/search"
