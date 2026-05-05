@@ -303,6 +303,11 @@ def generate_ai_analysis(data):
             "Content-Type": "application/json"
         }
 
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
         prompt = f"""
         You are a professional real estate advisor.
 
@@ -315,10 +320,17 @@ def generate_ai_analysis(data):
         Status: {data['price_status']}
         Price drop risk: {data['price_drop_risk']}
 
-        Provide:
-        1. Pricing insight
-        2. Risk explanation
-        3. Suggested offer range
+        Write a clean, well-structured analysis in plain English.
+
+        Rules:
+        - Do NOT use symbols like ### or bullet points
+        - Use short paragraphs
+        - Keep it professional and easy to read
+
+        Include:
+        Pricing insight
+        Risk explanation
+        Suggested offer range
         """
 
         payload = {
