@@ -303,35 +303,30 @@ def generate_ai_analysis(data):
             "Content-Type": "application/json"
         }
 
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-
         prompt = f"""
-        You are a professional real estate advisor.
+You are a professional real estate advisor.
 
-        Analyze this property:
+Analyze this property:
 
-        Estimated price: {data['estimated_fair_price']}
-        Listing price: {data['listing_price']}
-        Difference: {data['price_difference_percent']}%
-        Days on market: {data['days_on_market']}
-        Status: {data['price_status']}
-        Price drop risk: {data['price_drop_risk']}
+Estimated price: {data['estimated_fair_price']}
+Listing price: {data['listing_price']}
+Difference: {data['price_difference_percent']}%
+Days on market: {data['days_on_market']}
+Status: {data['price_status']}
+Price drop risk: {data['price_drop_risk']}
 
-        Write a clean, well-structured analysis in plain English.
+Write a clean, well-structured analysis in plain English.
 
-        Rules:
-        - Do NOT use symbols like ### or bullet points
-        - Use short paragraphs
-        - Keep it professional and easy to read
+Rules:
+- Do NOT use symbols like ### or bullet points
+- Use short paragraphs
+- Keep it professional and easy to read
 
-        Include:
-        Pricing insight
-        Risk explanation
-        Suggested offer range
-        """
+Include:
+Pricing insight
+Risk explanation
+Suggested offer range
+"""
 
         payload = {
             "model": "gpt-4o-mini",
@@ -347,8 +342,8 @@ def generate_ai_analysis(data):
 
         return result["choices"][0]["message"]["content"]
 
-    except Exception:
-        return "AI analysis is temporarily unavailable."
+    except Exception as e:
+        return f"AI error: {str(e)}"
     
 # Let's convert address into latitude and longitude using OpenStreetMap
 def get_coordinates(address):
