@@ -355,7 +355,8 @@ def get_coordinates(address):
     params = {
         "q": address,
         "format": "json",
-        "limit": 1
+        "limit": 1,
+        "countrycodes": "us"
     }
 
     headers = {
@@ -491,7 +492,7 @@ def calculate_location_score(nearby_summary):
 def predict_house(data: HouseInput):
     try:
         # Let's build a more complete address for better geocoding
-        full_address = f"{data.address}, {data.zipcode}, USA"
+        full_address = f"{data.address}, {data.zipcode}"
 
         # Let's get coordinates
         lat, lon = get_coordinates(full_address)
