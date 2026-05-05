@@ -340,7 +340,10 @@ Suggested offer range
         response = requests.post(url, headers=headers, json=payload)
         result = response.json()
 
-        return result["choices"][0]["message"]["content"]
+        if "choices" in result:
+            return result["choices"][0]["message"]["content"]
+        else:
+            return f"OpenAI error: {result}"
 
     except Exception as e:
         return f"AI error: {str(e)}"
