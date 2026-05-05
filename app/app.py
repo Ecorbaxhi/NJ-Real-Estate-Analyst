@@ -326,6 +326,8 @@ Include:
 Pricing insight
 Risk explanation
 Suggested offer range
+
+Keep the response under 120 words.
 """
 
         payload = {
