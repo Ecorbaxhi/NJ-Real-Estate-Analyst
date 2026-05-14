@@ -1,4 +1,4 @@
-# Let's import the libraries we need for the backend and machine learning
+# Importing the libraries we need for the backend and machine learning
 from pathlib import Path
 import pandas as pd
 
@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 
-# Let's return the real backend error for debugging
+# Returning the real backend error for debugging
 from fastapi import HTTPException
 
 import os
@@ -33,7 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Let's define the structure of the input data coming from the user
+# Defining the structure of the input data coming from the user
 class HouseInput(BaseModel):
     bedrooms: int
     bathrooms: float
@@ -51,7 +51,7 @@ class HouseInput(BaseModel):
     missing_sqft: bool = False
 
 
-# Let's create a function to estimate fair price using the model
+# Creating a function to estimate fair price using the model
 def estimate_price(model, house):
     return model.predict(house)[0]
 
@@ -68,7 +68,7 @@ def estimate_price_from_comps(comps, house):
     # Let's calculate price per square foot for each comparable house
     comps["price_per_sqft"] = comps["price"] / comps["sqft_living"]
 
-    # Let's give more weight to houses that are more similar
+    # Give more weight to houses that are more similar
     if "distance" in comps.columns:
         comps["weight"] = 1 / (comps["distance"] + 1)
         weighted_price_sqft = (comps["price_per_sqft"] * comps["weight"]).sum() / comps["weight"].sum()
@@ -102,7 +102,7 @@ def combine_prices(predicted_price, estimated_price_comps, comps_count):
         return (0.8 * predicted_price) + (0.2 * estimated_price_comps)
 
 
-# Let's estimate price drop risk using BOTH days on market and overpricing
+# Estimating price drop risk using BOTH days on market and overpricing
 def estimate_price_drop_risk(difference, days_on_market):
 
     # Step 1: Base risk from days on market
@@ -131,7 +131,7 @@ def estimate_price_drop_risk(difference, days_on_market):
         return "HIGH"
 
 
-# Let's find comparable houses using ranking instead of strict filters
+# Finding comparable houses using ranking instead of strict filters
 def find_comparables(df, house):
 
     # Let's read the house features
@@ -143,7 +143,7 @@ def find_comparables(df, house):
 
     comps = df.copy()
 
-    # Optional: filter by zipcode if available
+    # filter by zipcode if available
     if "zipcode" in house.columns:
         zipcode = house["zipcode"].values[0]
         comps = comps[comps["zipcode"] == zipcode]
@@ -163,19 +163,19 @@ def find_comparables(df, house):
     return comps.head(20)
 
 
-# Let's load the dataset from the data folder
+# Load the dataset from the data folder
 data_path = Path(__file__).resolve().parent.parent / "data" / "kc_house_data.csv"
 df = pd.read_csv(data_path)
 
-# Let's store zipcode as string for matching and as numeric for the model
+# Store zipcode as string for matching and as numeric for the model
 df["zipcode_str"] = df["zipcode"].astype(str).str.zfill(5)
 df["zipcode_num"] = df["zipcode"].astype(int)
 
-# Let's store the valid zipcodes present in the dataset
+# Store the valid zipcodes present in the dataset
 valid_zipcodes = set(df["zipcode_str"].unique())
 
 
-# Let's define features WITH zipcode (location-aware model)
+# Define features WITH zipcode (location-aware model)
 features_with_zip = [
     "bedrooms",
     "bathrooms",
@@ -185,7 +185,7 @@ features_with_zip = [
     "zipcode"
 ]
 
-# Let's define features WITHOUT zipcode (general model)
+# Define features WITHOUT zipcode (general model)
 features_no_zip = [
     "bedrooms",
     "bathrooms",
@@ -194,13 +194,13 @@ features_no_zip = [
     "yr_built"
 ]
 
-# Let's prepare datasets for both models
+# Prepare datasets for both models
 X_with_zip = df[features_with_zip]
 X_no_zip = df[features_no_zip]
 y = df["price"]
 
 
-# Let's split data for both models
+# Split data for both models
 X_train_zip, X_test_zip, y_train_zip, y_test_zip = train_test_split(
     X_with_zip, y, test_size=0.2, random_state=42
 )
@@ -227,7 +227,7 @@ rf_model_no_zip.fit(X_train_no_zip, y_train_no_zip)
 
 
 
-# Let's create a simple route to check if the API is running
+# Creating a simple route to check if the API is running
 @app.api_route("/", methods=["GET", "HEAD"])
 def home():
     return {"message": "NJ Real Estate Analyst API is running"}
@@ -290,7 +290,7 @@ def generate_explanation(price_diff_pct, days_on_market, comps_count, location_s
 
     return explanation.strip()
 
-# Let's generate AI analysis using OpenAI
+# Generate AI analysis using OpenAI
 def generate_ai_analysis(data):
 
     try:
@@ -350,36 +350,52 @@ Keep the response under 120 words.
     except Exception as e:
         return f"AI error: {str(e)}"
     
-# Let's convert address into latitude and longitude using OpenStreetMap
+# Let's convert address into latitude and longitude using multiple search attempts
 def get_coordinates(address):
     url = "https://nominatim.openstreetmap.org/search"
 
-    params = {
-        "q": address,
-        "format": "json",
-        "limit": 1,
-        "countrycodes": "us"
-    }
+    search_queries = [
+        address,
+        f"{address}, United States",
+        address.replace(",", "")
+    ]
 
     headers = {
-        "User-Agent": "NJ-Real-Estate-Analyst/1.0"
+        "User-Agent": "NJ-Real-Estate-Analyst/1.0 (student project)"
     }
 
-    try:
-        response = requests.get(url, params=params, headers=headers, timeout=10)
-        data = response.json()
+    for query in search_queries:
 
-        if len(data) == 0:
-            return None, None
+        params = {
+            "q": query,
+            "format": "json",
+            "limit": 1,
+            "countrycodes": "us"
+        }
 
-        lat = float(data[0]["lat"])
-        lon = float(data[0]["lon"])
-        return lat, lon
-    except:
-        return None, None
+        try:
+            response = requests.get(
+                url,
+                params=params,
+                headers=headers,
+                timeout=10
+            )
+
+            data = response.json()
+
+            if len(data) > 0:
+                lat = float(data[0]["lat"])
+                lon = float(data[0]["lon"])
+
+                return lat, lon
+
+        except:
+            continue
+
+    return None, None
 
 
-# Let's try a backup Overpass server if the first one fails
+# Backup Overpass server if the first one fails
 def get_nearby_places(lat, lon):
 
     urls = [
@@ -428,7 +444,7 @@ def get_nearby_places(lat, lon):
     return None
 
 
-# Let's count nearby places by category
+# Count nearby places by category
 def summarize_nearby_places(nearby_data):
 
     summary = {
@@ -459,7 +475,7 @@ def summarize_nearby_places(nearby_data):
     return summary
 
 
-# Let's convert nearby places into a normalized location score (0 to 1)
+# Convert nearby places into a normalized location score (0 to 1)
 def calculate_location_score(nearby_summary):
 
     # Let's assign weights to each category (importance)
@@ -489,21 +505,21 @@ def calculate_location_score(nearby_summary):
 
     return score / max_score
 
-# Let's create the main prediction route that receives user input
+# Create the main prediction route that receives user input
 @app.post("/predict")
 def predict_house(data: HouseInput):
     try:
-        # Let's build a more complete address for better geocoding
+        # Build a more complete address for better geocoding
         full_address = f"{data.address}, {data.zipcode}"
 
-        # Let's get coordinates
+        # Get coordinates
         lat, lon = get_coordinates(full_address)
 
-        # Let's get nearby places
+        # Get nearby places
         nearby_places = get_nearby_places(lat, lon) if lat and lon else None
         nearby_summary = summarize_nearby_places(nearby_places)
 
-        # Let's choose the right model depending on whether the zipcode is known
+        # Choose the right model depending on whether the zipcode is known
         if data.zipcode in valid_zipcodes:
 
             # Convert zipcode to int for the model
@@ -519,11 +535,11 @@ def predict_house(data: HouseInput):
                 "zipcode": [zipcode_int]
             })
 
-            # Let's predict using the models trained with zipcode
+            # Predict using the models trained with zipcode
             lr_price = estimate_price(model_zip, house_example)
             rf_price = estimate_price(rf_model_zip, house_example)
 
-            # Let's keep track of which mode was used
+            # Keep track of which mode was used
             zipcode_mode = "known_zipcode"
 
             # Let's find comparable houses
@@ -531,7 +547,7 @@ def predict_house(data: HouseInput):
 
         else:
 
-            # Let's build the input without zipcode
+            # Build the input without zipcode
             house_example = pd.DataFrame({
                 "bedrooms": [data.bedrooms],
                 "bathrooms": [data.bathrooms],
@@ -540,7 +556,7 @@ def predict_house(data: HouseInput):
                 "yr_built": [data.yr_built]
             })
 
-            # Let's predict using the models trained without zipcode
+            # Predict using the models trained without zipcode
             lr_price = estimate_price(model_no_zip, house_example)
             rf_price = estimate_price(rf_model_no_zip, house_example)
 
@@ -550,7 +566,7 @@ def predict_house(data: HouseInput):
             # Let's skip comparables when zipcode is unknown
             comps = pd.DataFrame()
 
-        # Let's stabilize the model prediction by checking if Random Forest is too far from Linear Regression
+        # Stabilize the model prediction by checking if Random Forest is too far from Linear Regression
         model_difference = abs(rf_price - lr_price) / lr_price
 
         if model_difference > 0.30:
@@ -571,18 +587,18 @@ def predict_house(data: HouseInput):
                 len(comps)
             )
 
-        # Let's calculate a location score based on nearby amenities
+        # Calculate a location score based on nearby amenities
         location_score = calculate_location_score(nearby_summary)
 
-        # Let's adjust the price using a multiplier (max ±10%)
+        # Adjust the price using a multiplier (max ±10%)
         location_multiplier = 1 + (location_score - 0.5) * 0.2
 
         final_estimated_price *= location_multiplier
 
-        # Let's calculate the price difference
+        # Calculate the price difference
         difference = (data.listing_price - final_estimated_price) / final_estimated_price * 100
 
-        # Let's determine price status
+        # Determine price status
         if difference > 5:
             price_status = "Overpriced"
         elif difference < -5:
@@ -602,7 +618,7 @@ def predict_house(data: HouseInput):
         if hasattr(data, "missing_sqft") and data.missing_sqft:
             missing_fields.append("square footage")
 
-        # Let's estimate price drop risk
+        # Estimate price drop risk
         price_drop_risk = estimate_price_drop_risk(difference, data.days_on_market)
 
         explanation = generate_explanation(
@@ -624,11 +640,11 @@ def predict_house(data: HouseInput):
             "explanation": explanation,
             "nearby_places": nearby_summary,
 
-            # Let's return the coordinates so we can show the property on the map
+            # Return the coordinates so we can show the property on the map
             "latitude": lat,
             "longitude": lon,
 
-            # Let's add debug information to understand what is happening
+            # Add debug information to understand what is happening
             "debug": {
                 "lr_price": lr_price,
                 "rf_price": rf_price,
